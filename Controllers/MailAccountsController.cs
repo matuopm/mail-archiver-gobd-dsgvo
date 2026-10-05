@@ -1109,6 +1109,14 @@ namespace MailArchiver.Controllers
                 return NotFound();
             }
 
+            if (await RetainedSources.AccountHasRetainedAsync(_context, id))
+            {
+                _logger.LogWarning("Deletion of account {AccountId} refused: emails with retained originals", id);
+                TempData["ErrorMessage"] =
+                    "This account has emails whose originals are stored write-once and still within their retention period, so it cannot be deleted yet.";
+                return RedirectToAction(nameof(Index));
+            }
+
             // Determine number of emails to delete
             var emailCount = await _context.ArchivedEmails.CountAsync(e => e.MailAccountId == id);
 

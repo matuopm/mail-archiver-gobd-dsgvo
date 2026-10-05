@@ -462,7 +462,7 @@ namespace MailArchiver.Data
                 .HasColumnType("timestamp with time zone");
 
             modelBuilder.Entity<ArchivedEmailSource>()
-                .HasOne<ArchivedEmail>()
+                .HasOne(s => s.ArchivedEmail)
                 .WithOne()
                 .HasForeignKey<ArchivedEmailSource>(s => s.ArchivedEmailId)
                 .OnDelete(DeleteBehavior.Cascade);

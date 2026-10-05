@@ -9,6 +9,7 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using MimeKit;
 using System.Globalization;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -1343,7 +1344,13 @@ namespace MailArchiver.Services.Core
 
         #region Archiving
 
-        public async Task<bool> ArchiveEmailAsync(MailAccount account, MimeMessage message, bool isOutgoing, string? folderName = null)
+        /// <param name="originalMime">
+        /// The message bytes exactly as received. When given (Compliance:StoreOriginalMime), they
+        /// are stored write-once in archive_worm together with their SHA-256, in the same
+        /// transaction as the email, and the hash is also written to ContentHash.
+        /// </param>
+        public async Task<bool> ArchiveEmailAsync(MailAccount account, MimeMessage message, bool isOutgoing, string? folderName = null,
+            byte[]? originalMime = null)
         {
             // Extract date with fallback handling for malformed Date headers
             var emailDate = MailContentHelper.ExtractEmailDate(message.Date, message.Headers);
@@ -1714,6 +1721,21 @@ namespace MailArchiver.Services.Core
                     emailAttachments.Add(icsAttachment);
                     archivedEmail.Attachments.Add(icsAttachment);
                     archivedEmail.HasAttachments = true;
+                }
+
+                if (originalMime != null)
+                {
+                    var sha256 = Convert.ToHexString(SHA256.HashData(originalMime)).ToLowerInvariant();
+                    archivedEmail.ContentHash = sha256;
+                    archivedEmail.HashCreatedAt = DateTime.UtcNow;
+                    _context.ArchivedEmailSources.Add(new ArchivedEmailSource
+                    {
+                        ArchivedEmail = archivedEmail,
+                        RawMime = originalMime,
+                        Size = originalMime.Length,
+                        Sha256 = sha256,
+                        Source = ArchivedEmailSourceKinds.Imap
+                    });
                 }
 
                 try
@@ -2088,9 +2110,21 @@ namespace MailArchiver.Services.Core
 
             try
             {
+                // Emails whose original is still retained in archive_worm cannot be deleted
+                // (the database rejects it); they stay until their retention date has passed.
+                var retainedIds = RetainedSources.RetainedEmailIds(_context);
+                var retainedCount = await _context.ArchivedEmails
+                    .CountAsync(e => e.MailAccountId == account.Id && e.SentDate < cutoffDate && retainedIds.Contains(e.Id));
+                if (retainedCount > 0)
+                {
+                    _logger.LogInformation(
+                        "Local retention for account {AccountName}: keeping {Count} emails whose stored original is still within its retention period",
+                        account.Name, retainedCount);
+                }
+
                 // Find all emails older than the cutoff date for this account
                 var emailsToDelete = await _context.ArchivedEmails
-                    .Where(e => e.MailAccountId == account.Id && e.SentDate < cutoffDate)
+                    .Where(e => e.MailAccountId == account.Id && e.SentDate < cutoffDate && !retainedIds.Contains(e.Id))
                     .Select(e => new { e.Id, e.Subject, e.From, e.SentDate })
                     .ToListAsync();
 
@@ -2109,7 +2143,7 @@ namespace MailArchiver.Services.Core
                 try
                 {
                     await _context.Database.ExecuteSqlInterpolatedAsync(
-                        $"UPDATE mail_archiver.\"ArchivedEmails\" SET \"IsLocked\" = false WHERE \"MailAccountId\" = {account.Id} AND \"SentDate\" < {cutoffDate}");
+                        $"UPDATE mail_archiver.\"ArchivedEmails\" e SET \"IsLocked\" = false WHERE e.\"MailAccountId\" = {account.Id} AND e.\"SentDate\" < {cutoffDate} AND NOT EXISTS (SELECT 1 FROM archive_worm.\"ArchivedEmailSources\" s WHERE s.\"ArchivedEmailId\" = e.\"Id\" AND s.\"RetainUntil\" > now())");
                     _logger.LogDebug("Unlocked {Count} retention-expired emails for account {AccountName} prior to deletion",
                         emailsToDelete.Count, account.Name);
                 }

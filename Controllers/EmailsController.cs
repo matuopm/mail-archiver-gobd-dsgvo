@@ -4,6 +4,7 @@ using MailArchiver.Models;
 using MailArchiver.Models.ViewModels;
 using MailArchiver.Services;
 using MailArchiver.Services.Providers;
+using MailArchiver.Services.Shared;
 using MailArchiver.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -2897,6 +2898,13 @@ namespace MailArchiver.Controllers
                 TempData["ErrorMessage"] = "Email not found.";
                 return Redirect(returnUrl ?? Url.Action("Index"));
             }
+
+            if (await RetainedSources.RetainedEmailIds(_context).AnyAsync(retainedId => retainedId == id))
+            {
+                _logger.LogWarning("Deletion of email {EmailId} refused: original still retained", id);
+                TempData["ErrorMessage"] = RetainedSources.RetainedMessage;
+                return Redirect(returnUrl ?? Url.Action("Index"));
+            }
             
             // Store email information for logging before deletion
             var emailSubject = email.Subject;
@@ -3035,6 +3043,13 @@ namespace MailArchiver.Controllers
                     if (email == null)
                     {
                         _logger.LogWarning("Email with ID {EmailId} not found for deletion", id);
+                        errorCount++;
+                        continue;
+                    }
+
+                    if (await RetainedSources.RetainedEmailIds(_context).AnyAsync(retainedId => retainedId == id))
+                    {
+                        _logger.LogWarning("Deletion of email {EmailId} skipped: original still retained", id);
                         errorCount++;
                         continue;
                     }

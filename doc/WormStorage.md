@@ -17,8 +17,32 @@ For that, the original message bytes get their own table in a separate schema:
 | Working layer | `mail_archiver` | Parsed fields, folder, search data | Yes (locked rows only by the existing lock rules) |
 | Write-once layer | `archive_worm` | Original `.eml` bytes, SHA-256, capture time | No |
 
-> 🚧 **Status**: This is the storage foundation only. Nothing writes to the table yet;
-> capturing the original bytes during IMAP sync and import follows in a later change.
+## ⚙️ Enabling capture
+
+```yaml
+- Compliance__StoreOriginalMime=true
+```
+
+When enabled, the IMAP sync fetches each new message as raw bytes, stores them unchanged in
+`archive_worm` together with their SHA-256 (in the same transaction as the email), and also
+writes the hash to `ArchivedEmails.ContentHash` / `HashCreatedAt`. Default is `false`.
+Storage per email roughly doubles, because attachments are kept once in the parsed form and
+once inside the original.
+
+Not covered yet: emails archived before the switch was turned on, EML/MBOX import and
+Microsoft 365 (Graph) accounts.
+
+### Effect on deleting emails
+
+An email whose original is still within `RetainUntil` cannot be deleted. The application
+checks this up front instead of running into the database error:
+
+| Path | Behaviour |
+|---|---|
+| Local retention (`Local Retention Days`) | Such emails are skipped and kept; the rest is deleted as before |
+| Manual delete of a single email | Refused with an error message |
+| Bulk delete / delete job | Such emails are skipped; the job reports how many were kept |
+| Deleting a mail account | Refused while the account has such emails; nothing is changed |
 
 ## 🗄️ Table `archive_worm."ArchivedEmailSources"`
 

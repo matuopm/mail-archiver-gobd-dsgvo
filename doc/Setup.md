@@ -118,6 +118,9 @@ services:
       # Deletion Policy Settings (Optional - controls whether email deletion is allowed)
       - DeletionPolicy__DeletionAllowed=true
 
+      # Compliance Settings (Optional - store original messages write-once, see WormStorage.md)
+      - Compliance__StoreOriginalMime=false
+
       # TimeZone Settings
       - TimeZone__DisplayTimeZoneId=Etc/UCT
 
@@ -392,6 +395,9 @@ Settings for the audit data export page (admin only, reachable from the Logs pag
   - The current policy state is logged to the AccessLogs table on every startup (visible on the Logs page as "Deletion Policy" entries) for auditability.
   - Local retention deletion is exempt: emails that fall under a configured retention period are still deleted (they are unlocked immediately before deletion within the retention process).
 - **Immutability protection:** When `IsLocked = true`, the database compliance trigger (`prevent_locked_email_changes`) blocks ANY modification to the email row — all columns are protected, not just a fixed field list. The only exempt columns are `IsLocked` itself (so that unlocking for retention deletion and startup policy application remains possible) and `FolderName` (so that IMAP sync can update the folder when an email is moved server-side). The protection is column-agnostic (JSONB-based comparison) and automatically covers future schema additions.
+
+### 🔏 Compliance Settings
+- `Compliance__StoreOriginalMime`: Store the original message bytes of every newly synced IMAP email write-once, with SHA-256, in the `archive_worm` schema (true/false). Default is `false`. Emails with a stored original cannot be deleted before their retention date (retention, manual and account deletion skip or refuse them). See [Write-Once Storage for Original Messages](WormStorage.md).
 
 ### 🕐 TimeZone Settings
 - `TimeZone__DisplayTimeZoneId`: The time zone used for displaying email timestamps in the UI. Uses IANA time zone identifiers (e.g., "Europe/Berlin", "Asia/Tokyo"). Default is "Etc/UCT" for backward compatibility. When importing emails timestamps will be converted to this time zone for display purposes.
