@@ -4,6 +4,9 @@
 @{
     ViewData["Title"] = Localizer["DeleteEmailAccountTitle"];
     var emailCount = ViewBag.EmailCount ?? 0;
+    int retainedCount = ViewBag.RetainedCount ?? 0;
+    DateTime? retainedUntil = ViewBag.RetainedUntil;
+    var deletionBlocked = retainedCount > 0;
 }
 <div class="container">
     <h1 class="text-danger">
@@ -11,6 +14,19 @@
         @Localizer["DeleteEmailAccountTitle"]
     </h1>
 
+    @if (deletionBlocked)
+    {
+        <div class="alert alert-warning">
+            <h4><i class="bi bi-shield-lock-fill me-2"></i>@Localizer["RetainedAccountDeleteBlockedTitle"]</h4>
+            <p class="mb-3">@string.Format(Localizer["RetainedAccountDeleteBlockedInfo"], retainedCount.ToString("N0"),
+                                emailCount.ToString("N0"), retainedUntil?.ToLocalTime().ToString("d") ?? "")</p>
+            <a asp-action="Index" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> @Localizer["BackToAccounts"]
+            </a>
+        </div>
+    }
+    else
+    {
     <div class="alert alert-danger">
         <h4>⚠ @Localizer["PermanentDeletionWarning"]</h4>
         <p><strong>@Localizer["AboutToDeleteAccountAllEmails"]</strong></p>
@@ -44,6 +60,7 @@
             </small>
         </div>
     </div>
+    }
 
     <div class="card">
         <div class="card-header bg-light">
@@ -68,13 +85,22 @@
                 </dd>
                 <dt class="col-sm-3">@Localizer["ArchivedEmails"]</dt>
                 <dd class="col-sm-9">
+                    @if (deletionBlocked)
+                    {
+                        <span class="badge bg-secondary fs-6">@emailCount.ToString("N0")</span>
+                    }
+                    else
+                    {
                     <span class="badge bg-danger fs-6">@string.Format(Localizer["ArchivedEmailsWillBeDeleted"],
                                                 emailCount.ToString("N0"))</span>
+                    }
                 </dd>
             </dl>
         </div>
     </div>
 
+    @if (!deletionBlocked)
+    {
     <!-- Confirmation Form -->
     <div class="card mt-4 border-danger">
         <div class="card-header bg-danger text-white">
@@ -113,6 +139,7 @@
             </form>
         </div>
     </div>
+    }
 </div>
 
 @section Scripts {
@@ -120,6 +147,9 @@
         document.addEventListener('DOMContentLoaded', function () {
             const confirmCheckbox = document.getElementById('confirmDeletion');
             const deleteButton = document.getElementById('deleteButton');
+            if (!confirmCheckbox || !deleteButton) {
+                return; // deletion blocked by retained originals, nothing to wire up
+            }
 const deleteForm = document.getElementById('deleteForm');
             if (!deleteForm) {
                 console.error('Delete form not found');

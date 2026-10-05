@@ -42,7 +42,12 @@ checks this up front instead of running into the database error:
 | Local retention (`Local Retention Days`) | Such emails are skipped and kept; the rest is deleted as before |
 | Manual delete of a single email | Refused with an error message |
 | Bulk delete / delete job | Such emails are skipped; the job reports how many were kept |
-| Deleting a mail account | Refused while the account has such emails; nothing is changed |
+| Deleting a mail account | Refused while the account has such emails; nothing is changed. The delete page says so up front, with the count and the date the last original is retained until |
+
+A single retained original blocks deleting its whole account, including the emails of that
+account that have no stored original. The account can be disabled instead; it becomes
+deletable once the last of its originals has passed `RetainUntil`. Single emails without an
+original can still be deleted individually or in bulk.
 
 ## 🗄️ Table `archive_worm."ArchivedEmailSources"`
 

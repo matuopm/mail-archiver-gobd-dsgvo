@@ -2902,7 +2902,7 @@ namespace MailArchiver.Controllers
             if (await RetainedSources.RetainedEmailIds(_context).AnyAsync(retainedId => retainedId == id))
             {
                 _logger.LogWarning("Deletion of email {EmailId} refused: original still retained", id);
-                TempData["ErrorMessage"] = RetainedSources.RetainedMessage;
+                TempData["ErrorMessage"] = _localizer?["RetainedEmailCannotBeDeleted"].Value ?? RetainedSources.RetainedMessage;
                 return Redirect(returnUrl ?? Url.Action("Index"));
             }
             

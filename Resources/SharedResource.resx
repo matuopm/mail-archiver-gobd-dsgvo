@@ -3472,4 +3472,16 @@
   <data name="CancelExportConfirm" xml:space="preserve">
     <value>Cancel this export?</value>
   </data>
+  <data name="RetainedEmailCannotBeDeleted" xml:space="preserve">
+    <value>The original of this email is stored write-once and still within its retention period, so it cannot be deleted yet.</value>
+  </data>
+  <data name="RetainedAccountCannotBeDeleted" xml:space="preserve">
+    <value>This account has emails whose originals are stored write-once and still within their retention period, so it cannot be deleted yet.</value>
+  </data>
+  <data name="RetainedAccountDeleteBlockedTitle" xml:space="preserve">
+    <value>This account cannot be deleted yet</value>
+  </data>
+  <data name="RetainedAccountDeleteBlockedInfo" xml:space="preserve">
+    <value>{0} of {1} archived emails have an original that is stored write-once and retained until {2}. As long as any of them is retained, the account and all of its emails are kept, including emails without a stored original. Nothing will be deleted.</value>
+  </data>
 </root>

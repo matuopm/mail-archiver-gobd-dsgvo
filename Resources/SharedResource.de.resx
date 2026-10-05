@@ -3486,4 +3486,16 @@
   <data name="CancelExportConfirm" xml:space="preserve">
     <value>Diesen Export wirklich abbrechen?</value>
   </data>
+  <data name="RetainedEmailCannotBeDeleted" xml:space="preserve">
+    <value>Das Original dieser E-Mail ist unveränderbar gespeichert und noch in der Aufbewahrungsfrist. Sie kann daher noch nicht gelöscht werden.</value>
+  </data>
+  <data name="RetainedAccountCannotBeDeleted" xml:space="preserve">
+    <value>Dieses Konto enthält E-Mails, deren Originale unveränderbar gespeichert und noch in der Aufbewahrungsfrist sind. Es kann daher noch nicht gelöscht werden.</value>
+  </data>
+  <data name="RetainedAccountDeleteBlockedTitle" xml:space="preserve">
+    <value>Dieses Konto kann noch nicht gelöscht werden</value>
+  </data>
+  <data name="RetainedAccountDeleteBlockedInfo" xml:space="preserve">
+    <value>{0} von {1} archivierten E-Mails haben ein unveränderbar gespeichertes Original, das bis {2} aufbewahrt wird. Solange eines davon in der Frist ist, bleiben das Konto und alle seine E-Mails erhalten, auch E-Mails ohne gespeichertes Original. Es wird nichts gelöscht.</value>
+  </data>
 </root>

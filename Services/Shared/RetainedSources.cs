@@ -23,6 +23,21 @@ namespace MailArchiver.Services.Shared
                 .AnyAsync(s => s.RetainUntil > DateTime.UtcNow && s.ArchivedEmail.MailAccountId == accountId,
                     cancellationToken);
 
+        /// <summary>
+        /// How many emails of the account have a retained original, and until when the last
+        /// of them is retained (the earliest time the account could be deleted).
+        /// </summary>
+        public static async Task<(int Count, DateTime? RetainedUntil)> AccountRetentionAsync(
+            MailArchiverDbContext context, int accountId, CancellationToken cancellationToken = default)
+        {
+            var retained = context.ArchivedEmailSources
+                .Where(s => s.RetainUntil > DateTime.UtcNow && s.ArchivedEmail.MailAccountId == accountId);
+            var count = await retained.CountAsync(cancellationToken);
+            if (count == 0)
+                return (0, null);
+            return (count, await retained.MaxAsync(s => s.RetainUntil, cancellationToken));
+        }
+
         /// <summary>The subset of <paramref name="emailIds"/> whose originals are still retained.</summary>
         public static Task<List<int>> FilterRetainedAsync(MailArchiverDbContext context, ICollection<int> emailIds,
             CancellationToken cancellationToken = default) =>

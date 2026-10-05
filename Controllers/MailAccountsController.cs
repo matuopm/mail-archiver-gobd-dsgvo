@@ -1089,6 +1089,11 @@ namespace MailArchiver.Controllers
             // ViewBag für die E-Mail-Anzahl setzen
             ViewBag.EmailCount = emailCount;
 
+            // Emails with a retained original block the deletion; the view says so up front
+            var (retainedCount, retainedUntil) = await RetainedSources.AccountRetentionAsync(_context, id);
+            ViewBag.RetainedCount = retainedCount;
+            ViewBag.RetainedUntil = retainedUntil;
+
             return View(model);
         }
 
@@ -1112,8 +1117,7 @@ namespace MailArchiver.Controllers
             if (await RetainedSources.AccountHasRetainedAsync(_context, id))
             {
                 _logger.LogWarning("Deletion of account {AccountId} refused: emails with retained originals", id);
-                TempData["ErrorMessage"] =
-                    "This account has emails whose originals are stored write-once and still within their retention period, so it cannot be deleted yet.";
+                TempData["ErrorMessage"] = _localizer["RetainedAccountCannotBeDeleted"].Value;
                 return RedirectToAction(nameof(Index));
             }
 
