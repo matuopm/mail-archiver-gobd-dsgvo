@@ -19,6 +19,7 @@ namespace MailArchiver.Data
         public DbSet<ApiKey> ApiKeys { get; set; }
         public DbSet<AuditExportJob> AuditExportJobs { get; set; }
         public DbSet<DashboardStatsCache> DashboardStatsCaches { get; set; }
+        public DbSet<ArchivedEmailSource> ArchivedEmailSources { get; set; }
 
         public MailArchiverDbContext(DbContextOptions<MailArchiverDbContext> options)
             : base(options)
@@ -434,6 +435,36 @@ namespace MailArchiver.Data
 
             modelBuilder.Entity<DashboardStatsCache>()
                 .ToTable("DashboardStatsCache", "mail_archiver");
+
+            // ArchivedEmailSource: write-once original MIME message in the archive_worm
+            // schema. Size, Sha256 verification and CapturedAt are enforced by triggers.
+            modelBuilder.Entity<ArchivedEmailSource>()
+                .HasKey(s => s.ArchivedEmailId);
+
+            modelBuilder.Entity<ArchivedEmailSource>()
+                .Property(s => s.ArchivedEmailId)
+                .ValueGeneratedNever();
+
+            modelBuilder.Entity<ArchivedEmailSource>()
+                .Property(s => s.Sha256)
+                .HasColumnType("character(64)");
+
+            modelBuilder.Entity<ArchivedEmailSource>()
+                .Property(s => s.Source)
+                .HasMaxLength(20);
+
+            modelBuilder.Entity<ArchivedEmailSource>()
+                .Property(s => s.CapturedAt)
+                .HasColumnType("timestamp with time zone");
+
+            modelBuilder.Entity<ArchivedEmailSource>()
+                .HasOne<ArchivedEmail>()
+                .WithOne()
+                .HasForeignKey<ArchivedEmailSource>(s => s.ArchivedEmailId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<ArchivedEmailSource>()
+                .ToTable("ArchivedEmailSources", "archive_worm");
 
             // AccountStorageBackfillState entity configuration
             modelBuilder.Entity<AccountStorageBackfillState>()

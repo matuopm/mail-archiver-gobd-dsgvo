@@ -564,6 +564,15 @@ namespace MailArchiver.Migrations
                     b.Navigation("MailAccount");
                 });
 
+            modelBuilder.Entity("MailArchiver.Models.ArchivedEmailSource", b =>
+                {
+                    b.HasOne("MailArchiver.Models.ArchivedEmail", null)
+                        .WithOne()
+                        .HasForeignKey("MailArchiver.Models.ArchivedEmailSource", "ArchivedEmailId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("MailArchiver.Models.EmailAttachment", b =>
                 {
                     b.HasOne("MailArchiver.Models.ArchivedEmail", "ArchivedEmail")
@@ -817,6 +826,35 @@ namespace MailArchiver.Migrations
                     b.HasKey("Key");
 
                     b.ToTable("DashboardStatsCache", "mail_archiver");
+                });
+
+            modelBuilder.Entity("MailArchiver.Models.ArchivedEmailSource", b =>
+                {
+                    b.Property<int>("ArchivedEmailId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CapturedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<byte[]>("RawMime")
+                        .IsRequired()
+                        .HasColumnType("bytea");
+
+                    b.Property<string>("Sha256")
+                        .IsRequired()
+                        .HasColumnType("character(64)");
+
+                    b.Property<long>("Size")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.HasKey("ArchivedEmailId");
+
+                    b.ToTable("ArchivedEmailSources", "archive_worm");
                 });
 
             modelBuilder.Entity("MailArchiver.Models.BandwidthUsage", b =>
