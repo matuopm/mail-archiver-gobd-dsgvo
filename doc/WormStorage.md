@@ -74,6 +74,13 @@ with the application **stopped**. Choose your own password.
 ```sql
 CREATE ROLE mailarchiver_app LOGIN PASSWORD 'change-me';
 GRANT CONNECT ON DATABASE "MailArchiver" TO mailarchiver_app;
+-- EF Core issues CREATE TABLE IF NOT EXISTS "__EFMigrationsHistory" (in schema public)
+-- on every start. Since PostgreSQL 15 only superusers and the schema owner may create
+-- objects in public, so without this grant the startup migration fails.
+GRANT CREATE ON SCHEMA public TO mailarchiver_app;
+-- The application runs CREATE EXTENSION IF NOT EXISTS citext on every start, which a
+-- non-superuser may not do. Make sure it already exists.
+CREATE EXTENSION IF NOT EXISTS citext;
 
 DO $$
 DECLARE r record;
