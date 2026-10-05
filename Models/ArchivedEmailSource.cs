@@ -6,8 +6,7 @@ namespace MailArchiver.Models
     /// <para>
     /// Rows live in the separate <c>archive_worm</c> schema and are write-once:
     /// database triggers reject every UPDATE and TRUNCATE, recompute and verify the
-    /// hash on INSERT, and only allow a DELETE once the parent
-    /// <see cref="ArchivedEmail"/> is gone or no longer locked. See
+    /// hash on INSERT, and reject a DELETE before <see cref="RetainUntil"/>. See
     /// <c>doc/WormStorage.md</c>.
     /// </para>
     /// </summary>
@@ -27,6 +26,12 @@ namespace MailArchiver.Models
 
         /// <summary>When the source was captured (set by the database on insert, cannot be backdated).</summary>
         public DateTime CapturedAt { get; set; }
+
+        /// <summary>
+        /// No deletion before this time (set by the database on insert to the end of the
+        /// 10th year after the capture year). Independent of <see cref="ArchivedEmail.IsLocked"/>.
+        /// </summary>
+        public DateTime RetainUntil { get; set; }
 
         /// <summary>Where the bytes came from, one of <see cref="ArchivedEmailSourceKinds"/>.</summary>
         public string Source { get; set; } = ArchivedEmailSourceKinds.Imap;

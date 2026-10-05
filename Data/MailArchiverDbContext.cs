@@ -437,7 +437,7 @@ namespace MailArchiver.Data
                 .ToTable("DashboardStatsCache", "mail_archiver");
 
             // ArchivedEmailSource: write-once original MIME message in the archive_worm
-            // schema. Size, Sha256 verification and CapturedAt are enforced by triggers.
+            // schema. Size, Sha256 verification, CapturedAt and RetainUntil are enforced by triggers.
             modelBuilder.Entity<ArchivedEmailSource>()
                 .HasKey(s => s.ArchivedEmailId);
 
@@ -455,6 +455,10 @@ namespace MailArchiver.Data
 
             modelBuilder.Entity<ArchivedEmailSource>()
                 .Property(s => s.CapturedAt)
+                .HasColumnType("timestamp with time zone");
+
+            modelBuilder.Entity<ArchivedEmailSource>()
+                .Property(s => s.RetainUntil)
                 .HasColumnType("timestamp with time zone");
 
             modelBuilder.Entity<ArchivedEmailSource>()

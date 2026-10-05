@@ -30,6 +30,7 @@ For that, the original message bytes get their own table in a separate schema:
 | `Sha256` | SHA-256 of `RawMime` as lowercase hex, verified by the database |
 | `CapturedAt` | Capture time, set by the database (cannot be backdated) |
 | `Source` | `imap`, `eml-import`, `mbox-import`, `graph` or `reconstructed` |
+| `RetainUntil` | No deletion before this time; set by the database to the end of the 10th year after the capture year |
 
 ## 🔒 What the database enforces
 
@@ -39,11 +40,18 @@ Triggers created by migration `MigrateV2610_1`:
 |---|---|
 | `INSERT` | The hash is recomputed from `RawMime` and must match the given `Sha256`; `Size` and `CapturedAt` are set by the database |
 | `UPDATE` | Always rejected |
-| `DELETE` | Only when the parent `ArchivedEmails` row is gone or not locked (`IsLocked = false`) |
+| `DELETE` | Only after `RetainUntil` has passed |
 | `TRUNCATE` | Always rejected |
 
-Deleting an unlocked mail removes its source through the foreign key cascade. A locked
-mail cannot be deleted, so its source stays.
+The delete rule deliberately ignores `ArchivedEmails.IsLocked`: the application can switch
+that flag off itself (retention, account deletion), so it is no protection for the
+original. Deleting a mail cascades to its source, which means a mail whose original is
+still retained cannot be deleted at all, whatever its lock state. Once `RetainUntil` has
+passed, deleting the mail removes the original as well.
+
+`RetainUntil` always uses the longest statutory period (10 years under § 147 AO / § 257
+HGB, counted from the end of the calendar year). Shorter periods per document type are a
+planned, administrator-only extension.
 
 ## 🛡️ Hardening: separate owner role (recommended for compliance setups)
 
@@ -116,8 +124,9 @@ Keep `POSTGRES_USER` for administration only and do not give its password to the
   planned as an optional later step.
 - Future migrations that change `archive_worm` must be run by an administrator, because
   the application no longer owns that schema.
-- The parent lock (`IsLocked`) is still controlled by the application. Tightening when a
-  mail may be unlocked is a separate change.
+- The parsed copy in `mail_archiver` is still controlled by the application (it can be
+  unlocked and changed). The original in `archive_worm` and its hash stay the reference
+  that any later change can be checked against.
 
 ## 🔗 Related Documentation
 

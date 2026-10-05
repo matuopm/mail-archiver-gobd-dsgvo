@@ -12,7 +12,8 @@ namespace MailArchiver.Tests.Services;
 /// <summary>
 /// Integration tests for the write-once archive_worm."ArchivedEmailSources" table
 /// (migration MigrateV2610_1): hash verification on insert, rejected UPDATE/TRUNCATE,
-/// DELETE only for unlocked or deleted parents, and the archive_worm.harden() role split.
+/// DELETE only after RetainUntil (independent of IsLocked), and the archive_worm.harden()
+/// role split.
 /// Every test runs in a transaction that is rolled back.
 /// </summary>
 [Collection(TestDbFixture.CollectionName)]
@@ -74,6 +75,22 @@ public class ArchivedEmailSourceWormTests
             "INSERT INTO archive_worm.\"ArchivedEmailSources\" (\"ArchivedEmailId\", \"RawMime\", \"Size\", \"Sha256\", \"Source\") " +
             "VALUES ({0}, {1}, 0, {2}, 'imap')", emailId, mime, sha256);
 
+    /// <summary>
+    /// Inserts a source whose retention has already expired. The insert trigger always sets
+    /// RetainUntil to the future, so it is bypassed here (test user is a superuser).
+    /// </summary>
+    private static async Task InsertExpiredSourceAsync(MailArchiverDbContext ctx, int emailId)
+    {
+        await ctx.Database.ExecuteSqlRawAsync(
+            "ALTER TABLE archive_worm.\"ArchivedEmailSources\" DISABLE TRIGGER verify_source_insert");
+        await ctx.Database.ExecuteSqlRawAsync(
+            "INSERT INTO archive_worm.\"ArchivedEmailSources\" (\"ArchivedEmailId\", \"RawMime\", \"Size\", \"Sha256\", \"Source\", \"RetainUntil\") " +
+            "VALUES ({0}, {1}, {2}, {3}, 'imap', now() - interval '1 day')",
+            emailId, SampleMime, (long)SampleMime.Length, Sha256Hex(SampleMime));
+        await ctx.Database.ExecuteSqlRawAsync(
+            "ALTER TABLE archive_worm.\"ArchivedEmailSources\" ENABLE TRIGGER verify_source_insert");
+    }
+
     private static Task<int> CountSourcesAsync(MailArchiverDbContext ctx, int emailId) =>
         ctx.ArchivedEmailSources.CountAsync(s => s.ArchivedEmailId == emailId);
 
@@ -116,6 +133,7 @@ public class ArchivedEmailSourceWormTests
             RawMime = SampleMime,
             Sha256 = Sha256Hex(SampleMime).ToUpperInvariant(),
             CapturedAt = new DateTime(2000, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+            RetainUntil = new DateTime(2000, 1, 1, 0, 0, 0, DateTimeKind.Utc),
             Size = 1,
             Source = ArchivedEmailSourceKinds.Imap
         };
@@ -128,6 +146,8 @@ public class ArchivedEmailSourceWormTests
         Assert.Equal(Sha256Hex(SampleMime), stored.Sha256);
         Assert.Equal(SampleMime.Length, stored.Size);
         Assert.True(stored.CapturedAt > DateTime.UtcNow.AddDays(-1));
+        // End of the 10th year after the capture year.
+        Assert.Equal(new DateTime(stored.CapturedAt.ToUniversalTime().Year + 11, 1, 1), stored.RetainUntil.ToUniversalTime().Date);
 
         await scope.RollbackAsync();
     }
@@ -162,24 +182,21 @@ public class ArchivedEmailSourceWormTests
     }
 
     [Fact]
-    public async Task Delete_IsRejectedWhileTheEmailIsLocked_AndAllowedOnceUnlocked()
+    public async Task Delete_IsRejectedWhileRetained_EvenWhenTheEmailIsUnlocked()
     {
         await using var scope = await _fixture.CreateTransactionalContextAsync();
         var ctx = scope.Context;
-        var email = await SeedEmailAsync(ctx, isLocked: true);
+        var email = await SeedEmailAsync(ctx, isLocked: false);
         await InsertSourceAsync(ctx, email.Id, SampleMime, Sha256Hex(SampleMime));
 
-        Func<Task> deleteSource = () => ctx.Database.ExecuteSqlRawAsync(
-            "DELETE FROM archive_worm.\"ArchivedEmailSources\" WHERE \"ArchivedEmailId\" = {0}", email.Id);
+        // Neither directly nor through the cascade of the (unlocked) email.
+        Assert.Equal(RaiseException, await SqlStateOfAsync(ctx, () => ctx.Database.ExecuteSqlRawAsync(
+            "DELETE FROM archive_worm.\"ArchivedEmailSources\" WHERE \"ArchivedEmailId\" = {0}", email.Id)));
+        Assert.Equal(RaiseException, await SqlStateOfAsync(ctx, () => ctx.Database.ExecuteSqlRawAsync(
+            "DELETE FROM mail_archiver.\"ArchivedEmails\" WHERE \"Id\" = {0}", email.Id)));
 
-        Assert.Equal(RaiseException, await SqlStateOfAsync(ctx, deleteSource));
         Assert.Equal(1, await CountSourcesAsync(ctx, email.Id));
-
-        await ctx.Database.ExecuteSqlRawAsync(
-            "UPDATE mail_archiver.\"ArchivedEmails\" SET \"IsLocked\" = false WHERE \"Id\" = {0}", email.Id);
-
-        Assert.Null(await SqlStateOfAsync(ctx, deleteSource));
-        Assert.Equal(0, await CountSourcesAsync(ctx, email.Id));
+        Assert.Equal(1, await ctx.ArchivedEmails.CountAsync(e => e.Id == email.Id));
         await scope.RollbackAsync();
     }
 
@@ -197,22 +214,16 @@ public class ArchivedEmailSourceWormTests
     }
 
     [Fact]
-    public async Task DeletingAnUnlockedEmail_CascadesToItsSource_LockedEmailKeepsIt()
+    public async Task DeletingAnEmailWhoseRetentionExpired_CascadesToItsSource()
     {
         await using var scope = await _fixture.CreateTransactionalContextAsync();
         var ctx = scope.Context;
-        var unlocked = await SeedEmailAsync(ctx, isLocked: false);
-        var locked = await SeedEmailAsync(ctx, isLocked: true);
-        await InsertSourceAsync(ctx, unlocked.Id, SampleMime, Sha256Hex(SampleMime));
-        await InsertSourceAsync(ctx, locked.Id, SampleMime, Sha256Hex(SampleMime));
+        var email = await SeedEmailAsync(ctx, isLocked: false);
+        await InsertExpiredSourceAsync(ctx, email.Id);
 
         Assert.Null(await SqlStateOfAsync(ctx, () => ctx.Database.ExecuteSqlRawAsync(
-            "DELETE FROM mail_archiver.\"ArchivedEmails\" WHERE \"Id\" = {0}", unlocked.Id)));
-        Assert.Equal(0, await CountSourcesAsync(ctx, unlocked.Id));
-
-        Assert.Equal(RaiseException, await SqlStateOfAsync(ctx, () => ctx.Database.ExecuteSqlRawAsync(
-            "DELETE FROM mail_archiver.\"ArchivedEmails\" WHERE \"Id\" = {0}", locked.Id)));
-        Assert.Equal(1, await CountSourcesAsync(ctx, locked.Id));
+            "DELETE FROM mail_archiver.\"ArchivedEmails\" WHERE \"Id\" = {0}", email.Id)));
+        Assert.Equal(0, await CountSourcesAsync(ctx, email.Id));
         await scope.RollbackAsync();
     }
 
@@ -226,6 +237,8 @@ public class ArchivedEmailSourceWormTests
         var ownerRole = $"worm_owner_{suffix}";
 
         var email = await SeedEmailAsync(ctx, isLocked: false);
+        var expired = await SeedEmailAsync(ctx, isLocked: false);
+        await InsertExpiredSourceAsync(ctx, expired.Id);
 
         // A non-superuser application role with full rights on the regular schema.
         await ctx.Database.ExecuteSqlRawAsync($"CREATE ROLE {appRole} NOLOGIN");
@@ -250,10 +263,15 @@ public class ArchivedEmailSourceWormTests
         Assert.Equal(InsufficientPrivilege, await SqlStateOfAsync(ctx, () => ctx.Database.ExecuteSqlRawAsync(
             "CREATE OR REPLACE FUNCTION archive_worm.prevent_source_update() RETURNS trigger AS 'BEGIN RETURN NEW; END;' LANGUAGE plpgsql")));
 
-        // Deleting an unlocked email still removes its source through the cascade.
-        Assert.Null(await SqlStateOfAsync(ctx, () => ctx.Database.ExecuteSqlRawAsync(
+        // Unlocking the email does not help while the original is retained.
+        Assert.Equal(RaiseException, await SqlStateOfAsync(ctx, () => ctx.Database.ExecuteSqlRawAsync(
             "DELETE FROM mail_archiver.\"ArchivedEmails\" WHERE \"Id\" = {0}", email.Id)));
-        Assert.Equal(0, await CountSourcesAsync(ctx, email.Id));
+        Assert.Equal(1, await CountSourcesAsync(ctx, email.Id));
+
+        // After retention, deleting the email removes its source through the cascade.
+        Assert.Null(await SqlStateOfAsync(ctx, () => ctx.Database.ExecuteSqlRawAsync(
+            "DELETE FROM mail_archiver.\"ArchivedEmails\" WHERE \"Id\" = {0}", expired.Id)));
+        Assert.Equal(0, await CountSourcesAsync(ctx, expired.Id));
 
         await scope.RollbackAsync();
     }

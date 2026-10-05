@@ -23,12 +23,15 @@ namespace MailArchiver.Migrations
             //   * INSERT   - the hash is recomputed and must match, Size and
             //                CapturedAt are set by the database
             //   * UPDATE   - always rejected
-            //   * DELETE   - only once the parent ArchivedEmails row is gone
-            //                or unlocked (the existing lock decides)
+            //   * DELETE   - only after RetainUntil has passed. This is set by
+            //                the database on insert and deliberately does
+            //                not depend on ArchivedEmails.IsLocked, which the
+            //                application itself can switch off
             //   * TRUNCATE - always rejected
             //
-            // Deleting a mail cascades to its source. Idempotent: only creates
-            // what is missing.
+            // Deleting a mail cascades to its source, so a mail whose original
+            // is still retained cannot be deleted either. Idempotent: only
+            // creates what is missing.
 
             migrationBuilder.Sql(@"CREATE SCHEMA IF NOT EXISTS archive_worm;");
 
@@ -47,6 +50,7 @@ namespace MailArchiver.Migrations
                             ""Sha256"" character(64) NOT NULL,
                             ""CapturedAt"" timestamp with time zone NOT NULL DEFAULT now(),
                             ""Source"" character varying(20) NOT NULL,
+                            ""RetainUntil"" timestamp with time zone NOT NULL,
                             CONSTRAINT ""PK_ArchivedEmailSources"" PRIMARY KEY (""ArchivedEmailId""),
                             CONSTRAINT ""FK_ArchivedEmailSources_ArchivedEmails_ArchivedEmailId""
                                 FOREIGN KEY (""ArchivedEmailId"")
@@ -69,6 +73,8 @@ namespace MailArchiver.Migrations
                             IS 'Capture time, set by trigger on insert (cannot be backdated)';
                         COMMENT ON COLUMN archive_worm.""ArchivedEmailSources"".""Source""
                             IS 'Origin of the bytes: imap, eml-import, mbox-import, graph or reconstructed';
+                        COMMENT ON COLUMN archive_worm.""ArchivedEmailSources"".""RetainUntil""
+                            IS 'No deletion before this time; set by trigger on insert to the end of the 10th year after the capture year';
                     END IF;
                 END $$;
             ");
@@ -87,6 +93,10 @@ namespace MailArchiver.Migrations
                     NEW.""Sha256"" := actual_hash;
                     NEW.""Size"" := octet_length(NEW.""RawMime"");
                     NEW.""CapturedAt"" := now();
+                    -- Longest statutory period (10 years, counted from the end of
+                    -- the calendar year). Shorter periods per document type are a
+                    -- later, administrator-only change.
+                    NEW.""RetainUntil"" := date_trunc('year', now()) + interval '11 years';
                     RETURN NEW;
                 END;
                 $$ LANGUAGE plpgsql;
@@ -99,15 +109,12 @@ namespace MailArchiver.Migrations
                 END;
                 $$ LANGUAGE plpgsql;
 
-                CREATE OR REPLACE FUNCTION archive_worm.prevent_locked_source_deletion()
+                CREATE OR REPLACE FUNCTION archive_worm.prevent_retained_source_deletion()
                 RETURNS TRIGGER AS $$
                 BEGIN
-                    IF EXISTS (
-                        SELECT 1 FROM mail_archiver.""ArchivedEmails""
-                        WHERE ""Id"" = OLD.""ArchivedEmailId"" AND ""IsLocked"" = true
-                    ) THEN
-                        RAISE EXCEPTION 'Original message of email % is locked and cannot be deleted (compliance requirement - retention period active)',
-                            OLD.""ArchivedEmailId"";
+                    IF OLD.""RetainUntil"" > now() THEN
+                        RAISE EXCEPTION 'Original message of email % is retained until % and cannot be deleted (compliance requirement - retention period active)',
+                            OLD.""ArchivedEmailId"", OLD.""RetainUntil"";
                     END IF;
                     RETURN OLD;
                 END;
@@ -134,10 +141,10 @@ namespace MailArchiver.Migrations
                             BEFORE UPDATE ON archive_worm.""ArchivedEmailSources""
                             FOR EACH ROW EXECUTE FUNCTION archive_worm.prevent_source_update();
                     END IF;
-                    IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'prevent_locked_source_deletion') THEN
-                        CREATE TRIGGER prevent_locked_source_deletion
+                    IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'prevent_retained_source_deletion') THEN
+                        CREATE TRIGGER prevent_retained_source_deletion
                             BEFORE DELETE ON archive_worm.""ArchivedEmailSources""
-                            FOR EACH ROW EXECUTE FUNCTION archive_worm.prevent_locked_source_deletion();
+                            FOR EACH ROW EXECUTE FUNCTION archive_worm.prevent_retained_source_deletion();
                     END IF;
                     IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'prevent_source_truncate') THEN
                         CREATE TRIGGER prevent_source_truncate
@@ -162,10 +169,6 @@ namespace MailArchiver.Migrations
                     IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = owner_role) THEN
                         EXECUTE format('CREATE ROLE %I NOLOGIN', owner_role);
                     END IF;
-
-                    -- The owner runs the cascade delete and the delete trigger's lookup.
-                    EXECUTE format('GRANT USAGE ON SCHEMA mail_archiver TO %I', owner_role);
-                    EXECUTE format('GRANT SELECT ON mail_archiver.""ArchivedEmails"" TO %I', owner_role);
 
                     EXECUTE format('ALTER SCHEMA archive_worm OWNER TO %I', owner_role);
                     EXECUTE format('ALTER TABLE archive_worm.""ArchivedEmailSources"" OWNER TO %I', owner_role);
@@ -198,7 +201,7 @@ namespace MailArchiver.Migrations
                 DROP TABLE IF EXISTS archive_worm.""ArchivedEmailSources"";
                 DROP FUNCTION IF EXISTS archive_worm.verify_source_insert();
                 DROP FUNCTION IF EXISTS archive_worm.prevent_source_update();
-                DROP FUNCTION IF EXISTS archive_worm.prevent_locked_source_deletion();
+                DROP FUNCTION IF EXISTS archive_worm.prevent_retained_source_deletion();
                 DROP FUNCTION IF EXISTS archive_worm.prevent_source_truncate();
                 DROP FUNCTION IF EXISTS archive_worm.harden(name, name);
                 DROP SCHEMA IF EXISTS archive_worm;

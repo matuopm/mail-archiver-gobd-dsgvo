@@ -840,6 +840,9 @@ namespace MailArchiver.Migrations
                         .IsRequired()
                         .HasColumnType("bytea");
 
+                    b.Property<DateTime>("RetainUntil")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("Sha256")
                         .IsRequired()
                         .HasColumnType("character(64)");
