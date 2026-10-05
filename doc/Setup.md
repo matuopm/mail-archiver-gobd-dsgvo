@@ -384,7 +384,7 @@ Settings for the audit data export page (admin only, reachable from the Logs pag
 ### 🔒 Deletion Policy Settings
 - **Always on in this fork.** Manual deletion of archived emails is permanently disabled; `DeletionPolicy__DeletionAllowed` is ignored (the application forces it to `false`). That means:
   - All archived emails are locked (`IsLocked = true`) on startup via the database compliance trigger, preventing any modification or deletion at the database level.
-  - Manual deletion (single and bulk) is blocked on the application level with an error message.
+  - The UI has no buttons for deleting single or selected emails; requests that still reach the delete endpoints are refused with an error message.
   - The column default is adjusted so that newly imported emails are also locked.
   - The current policy state is logged to the AccessLogs table on every startup (visible on the Logs page as "Deletion Policy" entries) for auditability.
   - Deleting a mail account is refused while it still has archived emails. Disable the account instead to stop syncing.
