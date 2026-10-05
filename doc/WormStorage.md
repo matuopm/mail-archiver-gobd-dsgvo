@@ -17,20 +17,18 @@ For that, the original message bytes get their own table in a separate schema:
 | Working layer | `mail_archiver` | Parsed fields, folder, search data | Yes (locked rows only by the existing lock rules) |
 | Write-once layer | `archive_worm` | Original `.eml` bytes, SHA-256, capture time | No |
 
-## ⚙️ Enabling capture
+## ⚙️ Capture
 
-```yaml
-- Compliance__StoreOriginalMime=true
-```
+Capture is always on in this fork; there is no setting to disable it. Whoever does not need
+GoBD-style archiving should use the upstream Mail Archiver.
 
-When enabled, the IMAP sync fetches each new message as raw bytes, stores them unchanged in
-`archive_worm` together with their SHA-256 (in the same transaction as the email), and also
-writes the hash to `ArchivedEmails.ContentHash` / `HashCreatedAt`. Default is `false`.
-Storage per email roughly doubles, because attachments are kept once in the parsed form and
-once inside the original.
+The IMAP sync fetches each new message as raw bytes, stores them unchanged in `archive_worm`
+together with their SHA-256 (in the same transaction as the email), and also writes the hash
+to `ArchivedEmails.ContentHash` / `HashCreatedAt`. Storage per email roughly doubles, because
+attachments are kept once in the parsed form and once inside the original.
 
-Not covered yet: emails archived before the switch was turned on, EML/MBOX import and
-Microsoft 365 (Graph) accounts.
+Not covered yet: emails archived before this version, EML/MBOX import and Microsoft 365
+(Graph) accounts.
 
 ### Effect on deleting emails
 

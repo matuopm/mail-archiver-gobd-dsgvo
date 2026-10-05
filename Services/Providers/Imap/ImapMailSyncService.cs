@@ -31,7 +31,6 @@ namespace MailArchiver.Services.Providers.Imap
         private readonly BatchOperationOptions _batchOptions;
         private readonly MailSyncOptions _mailSyncOptions;
         private readonly BandwidthTrackingOptions _bandwidthOptions;
-        private readonly ComplianceOptions _complianceOptions;
 
         public ImapMailSyncService(
             MailArchiverDbContext context,
@@ -45,8 +44,7 @@ namespace MailArchiver.Services.Providers.Imap
             DateTimeHelper dateTimeHelper,
             IOptions<BatchOperationOptions> batchOptions,
             IOptions<MailSyncOptions> mailSyncOptions,
-            IOptions<BandwidthTrackingOptions> bandwidthOptions,
-            IOptions<ComplianceOptions> complianceOptions)
+            IOptions<BandwidthTrackingOptions> bandwidthOptions)
         {
             _context = context;
             _logger = logger;
@@ -60,7 +58,6 @@ namespace MailArchiver.Services.Providers.Imap
             _batchOptions = batchOptions.Value;
             _mailSyncOptions = mailSyncOptions.Value;
             _bandwidthOptions = bandwidthOptions.Value;
-            _complianceOptions = complianceOptions.Value;
         }
 
         /// <summary>
@@ -964,8 +961,7 @@ namespace MailArchiver.Services.Providers.Imap
                                 // Non-transient errors (malformed messages, UTF-8 issues, etc.) bubble
                                 // up immediately to the outer catch and are counted as FailedEmails.
                                 MimeKit.MimeMessage? message = null;
-                                // Bytes exactly as delivered by the server, kept only when
-                                // Compliance:StoreOriginalMime is on (stored write-once with a hash).
+                                // Bytes exactly as delivered by the server, stored write-once with a hash.
                                 byte[]? originalMime = null;
                                 var maxAttempts = TransientFetchRetryDelaysMs.Length + 1;
                                 var mboxRecoveryAttempted = false;
@@ -975,21 +971,14 @@ namespace MailArchiver.Services.Providers.Imap
                                 {
                                     try
                                     {
-                                        if (_complianceOptions.StoreOriginalMime)
-                                        {
-                                            // Same FETCH as GetMessageAsync, but the raw bytes are kept
-                                            // before parsing so the original can be stored unchanged.
-                                            using var rawStream = await folder.GetStreamAsync(uid);
-                                            using var raw = new MemoryStream();
-                                            await rawStream.CopyToAsync(raw);
-                                            originalMime = raw.ToArray();
-                                            raw.Position = 0;
-                                            message = await MimeKit.MimeMessage.LoadAsync(raw);
-                                        }
-                                        else
-                                        {
-                                            message = await folder.GetMessageAsync(uid);
-                                        }
+                                        // Same FETCH as GetMessageAsync, but the raw bytes are kept
+                                        // before parsing so the original can be stored unchanged.
+                                        using var rawStream = await folder.GetStreamAsync(uid);
+                                        using var raw = new MemoryStream();
+                                        await rawStream.CopyToAsync(raw);
+                                        originalMime = raw.ToArray();
+                                        raw.Position = 0;
+                                        message = await MimeKit.MimeMessage.LoadAsync(raw);
                                         // Success - reset the consecutive throttling counter
                                         consecutiveTransientFailures = 0;
                                         break;
@@ -1011,11 +1000,8 @@ namespace MailArchiver.Services.Providers.Imap
                                             using var rawStream = await folder.GetStreamAsync(uid, CancellationToken.None, null);
                                             using var buffered = new MemoryStream();
                                             await rawStream.CopyToAsync(buffered);
-                                            if (_complianceOptions.StoreOriginalMime)
-                                            {
-                                                // The original is what the server sent, before recovery.
-                                                originalMime = buffered.ToArray();
-                                            }
+                                            // The original is what the server sent, before recovery.
+                                            originalMime = buffered.ToArray();
                                             buffered.Position = 0;
                                             var recovery = await _mailCleaner.TryRecoverHeadersAsync(buffered);
                                             message = recovery.Message;
@@ -1055,10 +1041,7 @@ namespace MailArchiver.Services.Providers.Imap
 
                                         (message, var recoveredRaw) = await ImapMessageRecovery.TryRecoverWithRawAsync(
                                             folder, uid, _logger, CancellationToken.None);
-                                        if (_complianceOptions.StoreOriginalMime)
-                                        {
-                                            originalMime = recoveredRaw;
-                                        }
+                                        originalMime = recoveredRaw;
 
                                         if (message == null)
                                         {

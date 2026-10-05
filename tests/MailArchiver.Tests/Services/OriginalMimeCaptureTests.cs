@@ -11,7 +11,7 @@ using Xunit;
 namespace MailArchiver.Tests.Services;
 
 /// <summary>
-/// Storing the original message during archiving (Compliance:StoreOriginalMime) and how the
+/// Storing the original message during archiving and how the
 /// deletion paths treat emails whose original is still retained in archive_worm.
 /// Every test runs in a transaction that is rolled back, because retained originals cannot be
 /// deleted by the usual cleanup.

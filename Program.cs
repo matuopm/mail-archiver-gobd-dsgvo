@@ -155,8 +155,6 @@ builder.Services.Configure<ReleaseNotesOptions>(
 // Add Deletion Policy Options
 builder.Services.Configure<DeletionPolicyOptions>(
     builder.Configuration.GetSection(DeletionPolicyOptions.DeletionPolicy));
-builder.Services.Configure<ComplianceOptions>(
-    builder.Configuration.GetSection(ComplianceOptions.Compliance));
 
 // ===== Read-only REST API (v1) — kept in one contiguous block to minimize
 // upstream merge churn. Disabled by default via Api:Enabled. =====

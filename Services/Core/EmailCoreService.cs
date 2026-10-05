@@ -1345,7 +1345,7 @@ namespace MailArchiver.Services.Core
         #region Archiving
 
         /// <param name="originalMime">
-        /// The message bytes exactly as received. When given (Compliance:StoreOriginalMime), they
+        /// The message bytes exactly as received. When given, they
         /// are stored write-once in archive_worm together with their SHA-256, in the same
         /// transaction as the email, and the hash is also written to ContentHash.
         /// </param>
