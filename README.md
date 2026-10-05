@@ -61,7 +61,7 @@
 - Separate retention for the local archive
 
 ### 🔒 Deletion Lock (Compliance)
-- Disable manual deletion of archived emails via `DeletionPolicy__DeletionAllowed=false`
+- Manual deletion of archived emails is permanently disabled in this fork (`DeletionPolicy__DeletionAllowed` is ignored); accounts with archived emails cannot be deleted
 - Local retention deletion remains exempt and still runs
 - See [Setup Guide](doc/Setup.md#-deletion-policy-settings) for details
 

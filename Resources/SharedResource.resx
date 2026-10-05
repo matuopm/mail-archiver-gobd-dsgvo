@@ -3484,4 +3484,10 @@
   <data name="RetainedAccountDeleteBlockedInfo" xml:space="preserve">
     <value>{0} of {1} archived emails have an original that is stored write-once and retained until {2}. As long as any of them is retained, the account and all of its emails are kept, including emails without a stored original. Nothing will be deleted.</value>
   </data>
+  <data name="AccountWithEmailsCannotBeDeleted" xml:space="preserve">
+    <value>Deleting archived emails is disabled, so an account that still has archived emails cannot be deleted.</value>
+  </data>
+  <data name="AccountDeleteDisabledInfo" xml:space="preserve">
+    <value>This account has {0} archived emails. Deleting archived emails is disabled in this archive, so the account and its emails are kept. You can disable the account instead to stop syncing. Nothing will be deleted.</value>
+  </data>
 </root>

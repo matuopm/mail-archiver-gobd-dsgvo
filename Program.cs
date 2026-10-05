@@ -155,6 +155,8 @@ builder.Services.Configure<ReleaseNotesOptions>(
 // Add Deletion Policy Options
 builder.Services.Configure<DeletionPolicyOptions>(
     builder.Configuration.GetSection(DeletionPolicyOptions.DeletionPolicy));
+// GoBD fork: the deletion lock is always on, whatever the configuration says.
+builder.Services.PostConfigure<DeletionPolicyOptions>(o => o.DeletionAllowed = false);
 
 // ===== Read-only REST API (v1) — kept in one contiguous block to minimize
 // upstream merge churn. Disabled by default via Api:Enabled. =====

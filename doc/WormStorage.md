@@ -38,7 +38,7 @@ checks this up front instead of running into the database error:
 | Path | Behaviour |
 |---|---|
 | Local retention (`Local Retention Days`) | Such emails are skipped and kept; the rest is deleted as before |
-| Manual delete of a single email | Refused with an error message |
+| Manual delete of a single email | Refused with an error message (in this fork manual deletion is disabled for every email anyway, see the deletion policy in [Setup](Setup.md#-deletion-policy-settings)) |
 | Bulk delete / delete job | Such emails are skipped; the job reports how many were kept |
 | Deleting a mail account | Refused while the account has such emails; nothing is changed. The delete page says so up front, with the count and the date the last original is retained until |
 

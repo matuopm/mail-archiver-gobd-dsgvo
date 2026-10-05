@@ -6,7 +6,8 @@
     var emailCount = ViewBag.EmailCount ?? 0;
     int retainedCount = ViewBag.RetainedCount ?? 0;
     DateTime? retainedUntil = ViewBag.RetainedUntil;
-    var deletionBlocked = retainedCount > 0;
+    var deletionDisabled = ViewBag.DeletionDisabled ?? false;
+    var deletionBlocked = retainedCount > 0 || deletionDisabled;
 }
 <div class="container">
     <h1 class="text-danger">
@@ -18,8 +19,15 @@
     {
         <div class="alert alert-warning">
             <h4><i class="bi bi-shield-lock-fill me-2"></i>@Localizer["RetainedAccountDeleteBlockedTitle"]</h4>
-            <p class="mb-3">@string.Format(Localizer["RetainedAccountDeleteBlockedInfo"], retainedCount.ToString("N0"),
-                                emailCount.ToString("N0"), retainedUntil?.ToLocalTime().ToString("d") ?? "")</p>
+            @if (retainedCount > 0)
+            {
+                <p class="mb-3">@string.Format(Localizer["RetainedAccountDeleteBlockedInfo"], retainedCount.ToString("N0"),
+                                    emailCount.ToString("N0"), retainedUntil?.ToLocalTime().ToString("d") ?? "")</p>
+            }
+            else
+            {
+                <p class="mb-3">@string.Format(Localizer["AccountDeleteDisabledInfo"], emailCount.ToString("N0"))</p>
+            }
             <a asp-action="Index" class="btn btn-outline-secondary">
                 <i class="bi bi-arrow-left"></i> @Localizer["BackToAccounts"]
             </a>

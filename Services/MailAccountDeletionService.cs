@@ -189,6 +189,14 @@ namespace MailArchiver.Services
                         "This account has emails whose originals are stored write-once and still within their retention period, so it cannot be deleted yet.");
                 }
 
+                var deletionPolicy = scope.ServiceProvider.GetRequiredService<IOptions<DeletionPolicyOptions>>().Value;
+                if (!deletionPolicy.DeletionAllowed
+                    && await context.ArchivedEmails.AnyAsync(e => e.MailAccountId == job.MailAccountId, cancellationToken))
+                {
+                    throw new InvalidOperationException(
+                        "Email deletion is disabled by policy, so an account that still has archived emails cannot be deleted.");
+                }
+
                 // Phase 2: Unlock all emails
                 job.CurrentPhase = "Unlocking emails";
                 var lockedEmails = await context.ArchivedEmails
