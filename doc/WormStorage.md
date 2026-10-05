@@ -57,7 +57,7 @@ original can still be deleted individually or in bulk.
 | `Sha256` | SHA-256 of `RawMime` as lowercase hex, verified by the database |
 | `CapturedAt` | Capture time, set by the database (cannot be backdated) |
 | `Source` | `imap`, `eml-import`, `mbox-import`, `graph` or `reconstructed` |
-| `RetainUntil` | No deletion before this time; set by the database to the end of the 10th year after the capture year |
+| `RetainUntil` | No deletion before this time; set by the database to the end of the 8th year after the capture year |
 
 ## 🔒 What the database enforces
 
@@ -76,9 +76,42 @@ original. Deleting a mail cascades to its source, which means a mail whose origi
 still retained cannot be deleted at all, whatever its lock state. Once `RetainUntil` has
 passed, deleting the mail removes the original as well.
 
-`RetainUntil` always uses the longest statutory period (10 years under § 147 AO / § 257
-HGB, counted from the end of the calendar year). Shorter periods per document type are a
-planned, administrator-only extension.
+`RetainUntil` is the same for every email: 8 years, counted from the end of the calendar
+year in which the email was archived (the capture date, which the database sets and which
+cannot be backdated). There are no separate periods per document type. Because the capture
+date is used, emails that were already old when first archived are kept longer than
+strictly required, never shorter. Originals captured before `MigrateV2610_2` keep their
+earlier `RetainUntil` (end of the 10th year).
+
+## 🗑️ Automatic deletion after the retention period
+
+Once a day the application deletes every email whose original has passed `RetainUntil`,
+together with its attachments and the original. Each run that deletes something writes an
+entry of type "Retention" to the access log. Emails without a stored original (imports,
+Microsoft 365, emails archived before this version) are never deleted automatically.
+
+### Pausing it (e.g. during a tax audit)
+
+The retention period does not end while the documents are needed for a tax audit or
+another proceeding (§ 147 (3) AO). Administrators can pause the automatic deletion on the
+**Retention** page (navigation bar) with a reason, and resume it there. While paused,
+neither the automatic deletion nor the local retention (`Local Retention Days`) deletes
+anything. Starting and ending a pause are written to the access log (type "Deletion
+Policy"), and every pause stays listed on the page.
+
+## ⬆️ Upgrading a hardened database to MigrateV2610_2
+
+`MigrateV2610_2` changes the period in `archive_worm.verify_source_insert()`. If
+`archive_worm` was hardened (see below), the application role may not change that function
+and the startup migration stops with a message pointing here. Run the script once as
+database superuser, then start the new version:
+
+```bash
+docker compose exec -T postgres psql -U mailuser -d MailArchiver < doc/sql/MigrateV2610_2-archive_worm.sql
+```
+
+The script keeps the owner and grants. The migration notices the new function and only
+creates the `RetentionHolds` table.
 
 ## 🛡️ Hardening: separate owner role (recommended for compliance setups)
 

@@ -146,8 +146,8 @@ public class ArchivedEmailSourceWormTests
         Assert.Equal(Sha256Hex(SampleMime), stored.Sha256);
         Assert.Equal(SampleMime.Length, stored.Size);
         Assert.True(stored.CapturedAt > DateTime.UtcNow.AddDays(-1));
-        // End of the 10th year after the capture year.
-        Assert.Equal(new DateTime(stored.CapturedAt.ToUniversalTime().Year + 11, 1, 1), stored.RetainUntil.ToUniversalTime().Date);
+        // End of the 8th year after the capture year.
+        Assert.Equal(new DateTime(stored.CapturedAt.ToUniversalTime().Year + 9, 1, 1), stored.RetainUntil.ToUniversalTime().Date);
 
         await scope.RollbackAsync();
     }

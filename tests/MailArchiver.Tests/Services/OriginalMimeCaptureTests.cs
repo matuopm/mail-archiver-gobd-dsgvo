@@ -167,7 +167,7 @@ public class OriginalMimeCaptureTests
         var (count, until) = await RetainedSources.AccountRetentionAsync(ctx, withSource.Id);
         Assert.Equal(1, count);
         Assert.NotNull(until);
-        Assert.True(until > DateTime.UtcNow.AddYears(10));
+        Assert.True(until > DateTime.UtcNow.AddYears(8));
         Assert.Equal((0, (DateTime?)null), await RetainedSources.AccountRetentionAsync(ctx, withoutSource.Id));
 
         await scope.RollbackAsync();

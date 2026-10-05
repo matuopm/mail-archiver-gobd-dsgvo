@@ -862,6 +862,38 @@ namespace MailArchiver.Migrations
                     b.ToTable("ArchivedEmailSources", "archive_worm");
                 });
 
+            modelBuilder.Entity("MailArchiver.Models.RetentionHold", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("EndedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("EndedBy")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("StartedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("StartedBy")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("RetentionHolds", "mail_archiver");
+                });
+
             modelBuilder.Entity("MailArchiver.Models.BandwidthUsage", b =>
                 {
                     b.HasOne("MailArchiver.Models.MailAccount", "MailAccount")

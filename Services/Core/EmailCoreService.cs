@@ -2103,6 +2103,14 @@ namespace MailArchiver.Services.Core
                 return 0;
             }
 
+            // While the automatic deletion is paused (e.g. during a tax audit), local
+            // retention deletes nothing either.
+            if (await _context.RetentionHolds.AnyAsync(h => h.EndedAt == null))
+            {
+                _logger.LogInformation("Local retention for account {AccountName} skipped: deletion is paused", account.Name);
+                return 0;
+            }
+
             var cutoffDate = DateTime.UtcNow.AddDays(-account.LocalRetentionDays.Value);
 
             _logger.LogInformation("Starting deletion of local archived emails older than {Days} days (before {CutoffDate}) for account {AccountName}",

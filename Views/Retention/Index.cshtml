@@ -1,0 +1,99 @@
+@model List<MailArchiver.Models.RetentionHold>
+@inject Microsoft.Extensions.Localization.IStringLocalizer<MailArchiver.SharedResource> Localizer
+@{
+    ViewData["Title"] = Localizer["Retention"];
+    var activeHold = Model.FirstOrDefault(h => h.EndedAt == null);
+    int originalCount = ViewBag.OriginalCount;
+    int expiredCount = ViewBag.ExpiredCount;
+    int withoutOriginalCount = ViewBag.WithoutOriginalCount;
+    DateTime? nextExpiry = ViewBag.NextExpiry;
+}
+
+<div class="container">
+    <h1 class="h3 mb-1"><i class="bi bi-hourglass-split me-2"></i>@Localizer["Retention"]</h1>
+    <p class="text-muted">@Localizer["RetentionDescription"]</p>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">@TempData["SuccessMessage"]<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">@TempData["ErrorMessage"]<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>
+    }
+
+    <div class="card mb-4">
+        <div class="card-header bg-light"><h5 class="mb-0">@Localizer["RetentionOverview"]</h5></div>
+        <div class="card-body">
+            <dl class="row mb-0">
+                <dt class="col-sm-5">@Localizer["RetentionStoredOriginals"]</dt>
+                <dd class="col-sm-7">@originalCount.ToString("N0")</dd>
+                <dt class="col-sm-5">@Localizer["RetentionNextExpiry"]</dt>
+                <dd class="col-sm-7">@(nextExpiry?.ToLocalTime().ToString("d") ?? "–")</dd>
+                <dt class="col-sm-5">@Localizer["RetentionExpiredWaiting"]</dt>
+                <dd class="col-sm-7">@expiredCount.ToString("N0")</dd>
+                <dt class="col-sm-5">@Localizer["RetentionWithoutOriginal"]</dt>
+                <dd class="col-sm-7">@withoutOriginalCount.ToString("N0")</dd>
+            </dl>
+        </div>
+    </div>
+
+    <div class="card mb-4 @(activeHold != null ? "border-warning" : "")">
+        <div class="card-header @(activeHold != null ? "bg-warning" : "bg-light")">
+            <h5 class="mb-0">@Localizer["RetentionPauseTitle"]</h5>
+        </div>
+        <div class="card-body">
+            @if (activeHold != null)
+            {
+                <p><strong>@Localizer["RetentionPausedSince", activeHold.StartedAt.ToLocalTime().ToString("g"), activeHold.StartedBy]</strong></p>
+                <p>@Localizer["RetentionPauseReason"]: @activeHold.Reason</p>
+                <form asp-action="Resume" method="post">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-success"><i class="bi bi-play-fill"></i> @Localizer["RetentionResume"]</button>
+                </form>
+            }
+            else
+            {
+                <p>@Localizer["RetentionPauseInfo"]</p>
+                <form asp-action="Pause" method="post" class="row g-2">
+                    @Html.AntiForgeryToken()
+                    <div class="col-md-9">
+                        <input type="text" name="reason" class="form-control" required maxlength="500"
+                               placeholder="@Localizer["RetentionPauseReasonPlaceholder"]" />
+                    </div>
+                    <div class="col-md-3">
+                        <button type="submit" class="btn btn-warning w-100"><i class="bi bi-pause-fill"></i> @Localizer["RetentionPause"]</button>
+                    </div>
+                </form>
+            }
+        </div>
+    </div>
+
+    @if (Model.Count > 0)
+    {
+        <div class="card">
+            <div class="card-header bg-light"><h5 class="mb-0">@Localizer["RetentionPauseHistory"]</h5></div>
+            <div class="table-responsive">
+                <table class="table table-sm mb-0">
+                    <thead>
+                        <tr>
+                            <th>@Localizer["RetentionPauseFrom"]</th>
+                            <th>@Localizer["RetentionPauseTo"]</th>
+                            <th>@Localizer["RetentionPauseReason"]</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var hold in Model)
+                        {
+                            <tr>
+                                <td>@hold.StartedAt.ToLocalTime().ToString("g") (@hold.StartedBy)</td>
+                                <td>@(hold.EndedAt.HasValue ? $"{hold.EndedAt.Value.ToLocalTime():g} ({hold.EndedBy})" : "–")</td>
+                                <td>@hold.Reason</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</div>

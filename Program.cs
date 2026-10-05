@@ -492,6 +492,9 @@ builder.Services.AddHostedService<DeletionPolicyApplicationService>(provider => 
 
 builder.Services.AddHostedService<MailSyncBackgroundService>();
 
+// Deletes emails once the retention period of their stored original has ended
+builder.Services.AddHostedService<RetentionDeletionService>();
+
 // Register DatabaseMaintenanceService as singleton and hosted service - MUST be the same instance
 builder.Services.AddSingleton<DatabaseMaintenanceService>();
 builder.Services.AddSingleton<IDatabaseMaintenanceService>(provider => provider.GetRequiredService<DatabaseMaintenanceService>());

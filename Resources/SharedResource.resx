@@ -3490,4 +3490,61 @@
   <data name="AccountDeleteDisabledInfo" xml:space="preserve">
     <value>This account has {0} archived emails. Deleting archived emails is disabled in this archive, so the account and its emails are kept. You can disable the account instead to stop syncing. Nothing will be deleted.</value>
   </data>
+  <data name="RetentionDescription" xml:space="preserve">
+    <value>Every archived email with a stored original is kept until the end of the 8th year after the year it was archived. After that it is deleted automatically, once a day.</value>
+  </data>
+  <data name="RetentionOverview" xml:space="preserve">
+    <value>Overview</value>
+  </data>
+  <data name="RetentionStoredOriginals" xml:space="preserve">
+    <value>Emails with stored original</value>
+  </data>
+  <data name="RetentionNextExpiry" xml:space="preserve">
+    <value>Next end of a retention period</value>
+  </data>
+  <data name="RetentionExpiredWaiting" xml:space="preserve">
+    <value>Retention ended, waiting for deletion</value>
+  </data>
+  <data name="RetentionWithoutOriginal" xml:space="preserve">
+    <value>Emails without stored original (never deleted automatically)</value>
+  </data>
+  <data name="RetentionPauseTitle" xml:space="preserve">
+    <value>Pause automatic deletion</value>
+  </data>
+  <data name="RetentionPauseInfo" xml:space="preserve">
+    <value>While a tax audit or another proceeding is running, the retention period does not end (§ 147 (3) AO). Pause the automatic deletion for that time. Starting and ending a pause is recorded in the access log.</value>
+  </data>
+  <data name="RetentionPauseReasonPlaceholder" xml:space="preserve">
+    <value>Reason, e.g. tax audit 2026</value>
+  </data>
+  <data name="RetentionPause" xml:space="preserve">
+    <value>Pause</value>
+  </data>
+  <data name="RetentionResume" xml:space="preserve">
+    <value>Resume automatic deletion</value>
+  </data>
+  <data name="RetentionPausedSince" xml:space="preserve">
+    <value>Automatic deletion is paused since {0} by {1}.</value>
+  </data>
+  <data name="RetentionPauseReason" xml:space="preserve">
+    <value>Reason</value>
+  </data>
+  <data name="RetentionPauseHistory" xml:space="preserve">
+    <value>Pause history</value>
+  </data>
+  <data name="RetentionPauseFrom" xml:space="preserve">
+    <value>From</value>
+  </data>
+  <data name="RetentionPauseTo" xml:space="preserve">
+    <value>Until</value>
+  </data>
+  <data name="RetentionPauseReasonRequired" xml:space="preserve">
+    <value>Please enter a reason for the pause.</value>
+  </data>
+  <data name="RetentionPaused" xml:space="preserve">
+    <value>Automatic deletion is paused.</value>
+  </data>
+  <data name="RetentionResumed" xml:space="preserve">
+    <value>Automatic deletion is running again.</value>
+  </data>
 </root>
