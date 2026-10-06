@@ -1,3 +1,4 @@
+using MailArchiver.Attributes;
 using MailArchiver.Models.ViewModels;
 using MailArchiver.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -5,6 +6,7 @@ using Microsoft.Extensions.Localization;
 
 namespace MailArchiver.Controllers
 {
+    [AuditorAllowed]
     public class ApiKeysController : Controller
     {
         private readonly IApiKeyService _apiKeyService;

@@ -480,6 +480,9 @@ namespace MailArchiver.Migrations
                     b.Property<bool>("IsAdmin")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("IsAuditor")
+                        .HasColumnType("boolean");
+
                     b.Property<bool>("IsSelfManager")
                         .HasColumnType("boolean");
 

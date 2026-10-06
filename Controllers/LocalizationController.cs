@@ -1,8 +1,10 @@
+using MailArchiver.Attributes;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Localization;
 
 namespace MailArchiver.Controllers
 {
+    [AuditorAllowed]
     public class LocalizationController : Controller
     {
         [HttpPost]

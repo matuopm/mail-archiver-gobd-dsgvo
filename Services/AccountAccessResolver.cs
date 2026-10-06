@@ -25,7 +25,8 @@ namespace MailArchiver.Services
                     "Account access resolver services unavailable: IAuthenticationService or IUserService is not registered.");
             }
 
-            if (authService.IsCurrentUserAdmin(context))
+            // Admins and auditors see every account (auditors read only)
+            if (authService.IsCurrentUserAdmin(context) || authService.IsCurrentUserAuditor(context))
             {
                 return null;
             }

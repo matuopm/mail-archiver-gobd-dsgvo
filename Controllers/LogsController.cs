@@ -34,13 +34,15 @@ namespace MailArchiver.Controllers
         {
             var currentUsername = _authenticationService.GetCurrentUserDisplayName(HttpContext);
             var isAdmin = _authenticationService.IsCurrentUserAdmin(HttpContext);
+            // Auditors read the whole log like admins, but get no admin functions
+            var seesAllLogs = isAdmin || _authenticationService.IsCurrentUserAuditor(HttpContext);
 
             // Set default page size to 50
             pageSize = 50;
 
             // Get logs based on user role with date filtering
             List<AccessLog> logs;
-            if (isAdmin)
+            if (seesAllLogs)
             {
                 // For admin users, check if a specific username was requested for filtering
                 if (!string.IsNullOrEmpty(username))
@@ -71,8 +73,8 @@ namespace MailArchiver.Controllers
             var totalPages = (int)Math.Ceiling((double)totalLogs / pageSize);
             var paginatedLogs = logs.Skip((page - 1) * pageSize).Take(pageSize).ToList();
 
-            // For admin users, get all usernames for the filter dropdown
-            if (isAdmin)
+            // For admin users and auditors, get all usernames for the filter dropdown
+            if (seesAllLogs)
             {
                 var allUsers = await _context.Users
                     .OrderBy(u => u.Username)
@@ -85,6 +87,7 @@ namespace MailArchiver.Controllers
             ViewBag.TotalPages = totalPages;
             ViewBag.PageSize = pageSize;
             ViewBag.IsAdmin = isAdmin;
+            ViewBag.SeesAllLogs = seesAllLogs;
             ViewBag.FromDate = fromDate;
             ViewBag.ToDate = toDate;
             ViewBag.UsernameFilter = username;
@@ -93,12 +96,14 @@ namespace MailArchiver.Controllers
             return View(paginatedLogs);
         }
 
-        // POST: Logs/VerifyChain - checks the hash chain of the whole access log (admins only)
+        // POST: Logs/VerifyChain - checks the hash chain of the whole access log (admins and auditors)
+        [AuditorAllowed]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> VerifyChain()
         {
-            if (!_authenticationService.IsCurrentUserAdmin(HttpContext))
+            if (!_authenticationService.IsCurrentUserAdmin(HttpContext)
+                && !_authenticationService.IsCurrentUserAuditor(HttpContext))
             {
                 return Forbid();
             }

@@ -19,6 +19,8 @@ namespace MailArchiver.Models.ViewModels
 
         public bool IsSelfManager { get; set; }
 
+        public bool IsAuditor { get; set; }
+
         public bool IsActive { get; set; }
     }
 }

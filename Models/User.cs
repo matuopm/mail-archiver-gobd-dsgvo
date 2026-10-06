@@ -21,6 +21,10 @@ namespace MailArchiver.Models
         
         [Required]
         public bool IsSelfManager { get; set; } = false;
+
+        // Auditor (e.g. tax auditor): may read all mail accounts, changes nothing
+        [Required]
+        public bool IsAuditor { get; set; } = false;
         
         public bool IsActive { get; set; } = true;
         

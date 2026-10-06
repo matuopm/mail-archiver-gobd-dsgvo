@@ -60,6 +60,28 @@ Standard users have limited access and can:
 - Restore emails from their assigned accounts
 - Access email attachments from assigned accounts
 
+### Auditor Users (read only)
+The auditor role is meant for a tax auditor or an external reviewer who needs read access
+to the archive (GoBD "Z1" read access). An auditor:
+- Sees **all** mail accounts, without any mailbox assignment
+- Can search, open and download emails and attachments, and export selected emails
+- Reads the whole access log of all users and can run **Check log**
+- Can change their own password, set up 2FA and manage their own API keys (the API and
+  MCP are read-only anyway)
+
+An auditor cannot restore (copy back) emails, start or cancel syncs, import, manage mail
+accounts, users or settings, delete anything, or start the audit data export. The auditor
+role cannot be combined with Admin or Self Manager.
+
+This is enforced on the server, deny by default: for an auditor every request that is not
+a plain read (GET) is refused unless the action is explicitly marked as read-only
+(`[AuditorAllowed]`), and the restore forms are closed even for GET (`[AuditorForbidden]`).
+Actions added later are therefore closed for auditors until someone reviews them.
+Everything an auditor opens is recorded in the access log like for every other user.
+
+Role changes take effect at the next login. Deactivate the auditor's account when the
+audit is over.
+
 ## 🔒 Security Considerations
 
 1. Use strong passwords for all user accounts

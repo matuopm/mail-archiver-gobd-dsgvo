@@ -3603,4 +3603,13 @@
   <data name="AccessLogChainBroken" xml:space="preserve">
     <value>Protokoll beschädigt: Eintrag Nr. {0} passt nicht zur Kette. Die {1} Einträge davor sind unverändert; Prüfwert des letzten unveränderten Eintrags: {2}</value>
   </data>
+  <data name="Auditor" xml:space="preserve">
+    <value>Prüfer (nur Lesen)</value>
+  </data>
+  <data name="AuditorRoleDescription" xml:space="preserve">
+    <value>Darf die E-Mails aller Postfächer durchsuchen, öffnen und herunterladen und das gesamte Zugriffsprotokoll lesen, z. B. für einen Betriebsprüfer. Kann nichts ändern, wiederherstellen oder löschen.</value>
+  </data>
+  <data name="AuditorRoleExclusive" xml:space="preserve">
+    <value>Ein Prüfer kann nicht gleichzeitig Admin sein oder die Selbstverwaltung haben.</value>
+  </data>
 </root>
