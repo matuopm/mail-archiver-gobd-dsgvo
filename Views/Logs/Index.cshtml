@@ -142,7 +142,7 @@
                                     }
                                     else if (!string.IsNullOrEmpty(log.SearchParameters))
                                     {
-                                        @log.SearchParameters
+                                        @MailArchiver.Services.Shared.LogText.Display(log.SearchParameters, Localizer)
                                     }
                                     else
                                     {
@@ -246,7 +246,7 @@
                         }
                         else if (!string.IsNullOrEmpty(log.SearchParameters))
                         {
-                            <div class="mt-1">@log.SearchParameters</div>
+                            <div class="mt-1">@MailArchiver.Services.Shared.LogText.Display(log.SearchParameters, Localizer)</div>
                         }
                         else
                         {

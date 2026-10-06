@@ -389,7 +389,7 @@ Settings for the audit data export page (admin only, reachable from the Logs pag
   - The current policy state is logged to the AccessLogs table on every startup (visible on the Logs page as "Deletion Policy" entries) for auditability.
   - Deleting a mail account is refused while it still has archived emails. Disable the account instead to stop syncing.
   - Local retention deletion is exempt: emails that fall under a configured retention period are still deleted (they are unlocked immediately before deletion within the retention process), except emails whose original is still retained in `archive_worm`.
-  - Deleting emails after their retention period has ended is not available yet; it will come with the retention periods per document type.
+  - Emails are deleted automatically once their retention period (8 years from the end of the year they were archived) has ended; administrators can pause this on the Retention page. See [Write-Once Storage for Original Messages](WormStorage.md#-automatic-deletion-after-the-retention-period).
 - **Immutability protection:** When `IsLocked = true`, the database compliance trigger (`prevent_locked_email_changes`) blocks ANY modification to the email row — all columns are protected, not just a fixed field list. The only exempt columns are `IsLocked` itself (so that unlocking for retention deletion and startup policy application remains possible) and `FolderName` (so that IMAP sync can update the folder when an email is moved server-side). The protection is column-agnostic (JSONB-based comparison) and automatically covers future schema additions.
 
 ### 🔏 Original Messages (always on)

@@ -65,10 +65,11 @@
             <li><hr class="dropdown-divider"></li>
 
             <li>
-                <button type="button" class="dropdown-item text-danger"
-                        data-bs-toggle="modal" data-bs-target="#deleteAccountModal-@Model.Id">
+                @* Goes straight to the delete page, which confirms the deletion itself or
+                   explains why the account cannot be deleted (deletion lock, retained originals). *@
+                <a class="dropdown-item text-danger" asp-action="Delete" asp-route-id="@Model.Id">
                     <i class="bi bi-trash me-2" aria-hidden="true"></i>@Localizer["Delete"]
-                </button>
+                </a>
             </li>
         </ul>
     </div>

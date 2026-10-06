@@ -3504,4 +3504,91 @@
   <data name="AccountDeleteDisabledInfo" xml:space="preserve">
     <value>Dieses Konto hat {0} archivierte E-Mails. Das Löschen archivierter E-Mails ist in diesem Archiv gesperrt, daher bleiben das Konto und seine E-Mails erhalten. Sie können das Konto stattdessen deaktivieren, um die Synchronisierung zu beenden. Es wird nichts gelöscht.</value>
   </data>
+  <data name="RetentionDescription" xml:space="preserve">
+    <value>Jede archivierte E-Mail mit gespeichertem Original wird bis zum Ende des 8. Jahres nach dem Jahr ihrer Archivierung aufbewahrt. Danach wird sie automatisch gelöscht, einmal am Tag.</value>
+  </data>
+  <data name="RetentionOverview" xml:space="preserve">
+    <value>Übersicht</value>
+  </data>
+  <data name="RetentionStoredOriginals" xml:space="preserve">
+    <value>E-Mails mit gespeichertem Original</value>
+  </data>
+  <data name="RetentionNextExpiry" xml:space="preserve">
+    <value>Nächstes Fristende</value>
+  </data>
+  <data name="RetentionExpiredWaiting" xml:space="preserve">
+    <value>Frist abgelaufen, wartet auf Löschung</value>
+  </data>
+  <data name="RetentionWithoutOriginal" xml:space="preserve">
+    <value>E-Mails ohne gespeichertes Original (werden nie automatisch gelöscht)</value>
+  </data>
+  <data name="RetentionPauseTitle" xml:space="preserve">
+    <value>Automatische Löschung anhalten</value>
+  </data>
+  <data name="RetentionPauseInfo" xml:space="preserve">
+    <value>Solange eine Betriebsprüfung oder ein anderes Verfahren läuft, endet die Aufbewahrungsfrist nicht (§ 147 Abs. 3 AO). Halten Sie die automatische Löschung für diese Zeit an. Beginn und Ende einer Pause werden im Zugriffsprotokoll vermerkt.</value>
+  </data>
+  <data name="RetentionPauseReasonPlaceholder" xml:space="preserve">
+    <value>Grund, z. B. Betriebsprüfung 2026</value>
+  </data>
+  <data name="RetentionPause" xml:space="preserve">
+    <value>Anhalten</value>
+  </data>
+  <data name="RetentionResume" xml:space="preserve">
+    <value>Automatische Löschung fortsetzen</value>
+  </data>
+  <data name="RetentionPausedSince" xml:space="preserve">
+    <value>Angehalten seit</value>
+  </data>
+  <data name="RetentionPauseReason" xml:space="preserve">
+    <value>Grund</value>
+  </data>
+  <data name="RetentionPauseHistory" xml:space="preserve">
+    <value>Bisherige Pausen</value>
+  </data>
+  <data name="RetentionPauseFrom" xml:space="preserve">
+    <value>Von</value>
+  </data>
+  <data name="RetentionPauseTo" xml:space="preserve">
+    <value>Bis</value>
+  </data>
+  <data name="RetentionPauseReasonRequired" xml:space="preserve">
+    <value>Bitte geben Sie einen Grund für die Pause an.</value>
+  </data>
+  <data name="RetentionPaused" xml:space="preserve">
+    <value>Die automatische Löschung ist angehalten.</value>
+  </data>
+  <data name="RetentionResumed" xml:space="preserve">
+    <value>Die automatische Löschung läuft wieder.</value>
+  </data>
+  <data name="RetentionPausedBy" xml:space="preserve">
+    <value>Von</value>
+  </data>
+  <data name="RetentionPausedTitle" xml:space="preserve">
+    <value>Automatische Löschung ist angehalten</value>
+  </data>
+  <data name="Log_DeletionLockPermanent" xml:space="preserve">
+    <value>Das Löschen von E-Mails ist in diesem Archiv dauerhaft gesperrt (GoBD). Archivierte E-Mails sind gesperrt und werden nur automatisch nach Ablauf ihrer Aufbewahrungsfrist gelöscht.</value>
+  </data>
+  <data name="Log_RetentionPaused" xml:space="preserve">
+    <value>Automatische Löschung angehalten: {0}</value>
+  </data>
+  <data name="Log_RetentionResumed" xml:space="preserve">
+    <value>Automatische Löschung fortgesetzt</value>
+  </data>
+  <data name="Log_RetentionAutoDeleted" xml:space="preserve">
+    <value>Aufbewahrung (automatisch): {0} E-Mails nach Ablauf der Aufbewahrungsfrist gelöscht</value>
+  </data>
+  <data name="Log_DeletionRefusedEmail" xml:space="preserve">
+    <value>Löschen der E-Mail {0} abgelehnt: Löschen ist gesperrt</value>
+  </data>
+  <data name="Log_DeletionRefusedSelected" xml:space="preserve">
+    <value>Löschen von {0} ausgewählten E-Mails abgelehnt: Löschen ist gesperrt</value>
+  </data>
+  <data name="Log_DeletionRefusedAccountRetained" xml:space="preserve">
+    <value>Löschen des E-Mail-Kontos {0} abgelehnt: Es enthält E-Mails, deren Originale noch aufbewahrt werden</value>
+  </data>
+  <data name="Log_DeletionRefusedAccountLocked" xml:space="preserve">
+    <value>Löschen des E-Mail-Kontos {0} abgelehnt: Löschen ist gesperrt und das Konto enthält archivierte E-Mails</value>
+  </data>
 </root>

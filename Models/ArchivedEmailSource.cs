@@ -29,7 +29,7 @@ namespace MailArchiver.Models
 
         /// <summary>
         /// No deletion before this time (set by the database on insert to the end of the
-        /// 10th year after the capture year). Independent of <see cref="ArchivedEmail.IsLocked"/>.
+        /// 8th year after the capture year). Independent of <see cref="ArchivedEmail.IsLocked"/>.
         /// </summary>
         public DateTime RetainUntil { get; set; }
 

@@ -1098,6 +1098,17 @@ namespace MailArchiver.Controllers
             return View(model);
         }
 
+        /// <summary>Records a refused account deletion in the access log (GoBD: attempts are traceable).</summary>
+        private async Task LogRefusedAccountDeletionAsync(string message, int accountId)
+        {
+            var username = HttpContext.RequestServices.GetService<MailArchiver.Services.IAuthenticationService>()
+                ?.GetCurrentUserDisplayName(HttpContext);
+            if (string.IsNullOrEmpty(username))
+                return;
+            await _accessLogService.LogAccessAsync(username, AccessLogType.Deletion,
+                searchParameters: message, mailAccountId: accountId);
+        }
+
         private bool DeletionAllowed() =>
             HttpContext.RequestServices.GetRequiredService<IOptions<DeletionPolicyOptions>>().Value.DeletionAllowed;
 
@@ -1121,6 +1132,7 @@ namespace MailArchiver.Controllers
             if (await RetainedSources.AccountHasRetainedAsync(_context, id))
             {
                 _logger.LogWarning("Deletion of account {AccountId} refused: emails with retained originals", id);
+                await LogRefusedAccountDeletionAsync(LogText.Event("DeletionRefusedAccountRetained", account.Name), account.Id);
                 TempData["ErrorMessage"] = _localizer["RetainedAccountCannotBeDeleted"].Value;
                 return RedirectToAction(nameof(Index));
             }
@@ -1129,6 +1141,7 @@ namespace MailArchiver.Controllers
             if (!DeletionAllowed() && await _context.ArchivedEmails.AnyAsync(e => e.MailAccountId == id))
             {
                 _logger.LogWarning("Deletion of account {AccountId} refused: deletion policy forbids deleting emails", id);
+                await LogRefusedAccountDeletionAsync(LogText.Event("DeletionRefusedAccountLocked", account.Name), account.Id);
                 TempData["ErrorMessage"] = _localizer["AccountWithEmailsCannotBeDeleted"].Value;
                 return RedirectToAction(nameof(Index));
             }

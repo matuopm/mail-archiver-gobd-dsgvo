@@ -492,6 +492,9 @@ builder.Services.AddHostedService<DeletionPolicyApplicationService>(provider => 
 
 builder.Services.AddHostedService<MailSyncBackgroundService>();
 
+// Deletes emails once the retention period of their stored original has ended
+builder.Services.AddHostedService<RetentionDeletionService>();
+
 // Register DatabaseMaintenanceService as singleton and hosted service - MUST be the same instance
 builder.Services.AddSingleton<DatabaseMaintenanceService>();
 builder.Services.AddSingleton<IDatabaseMaintenanceService>(provider => provider.GetRequiredService<DatabaseMaintenanceService>());
@@ -991,7 +994,16 @@ using (var scope = app.Services.CreateScope())
     catch (Exception ex)
     {
         var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "Ein Fehler ist bei der Datenbankinitialisierung aufgetreten");
+        logger.LogCritical(ex, "Ein Fehler ist bei der Datenbankinitialisierung aufgetreten");
+        // GoBD fork: never run on a half-initialized archive (old retention function,
+        // missing tables, deletion lock not applied). Stop with a fixed exit code and a
+        // one-line hint so the error is noticed in `docker compose logs`.
+        Console.Error.WriteLine(
+            $"FATAL: Database initialization failed, the application stops (exit code 1): {ex.GetBaseException().Message.Split('\n')[0].Trim()}. " +
+            "Fix the database (for a hardened archive_worm see doc/WormStorage.md, upgrade section) and start again.");
+        // Disposing the logger factory flushes the queued console log, including the entry above.
+        services.GetService<ILoggerFactory>()?.Dispose();
+        Environment.Exit(1);
     }
 }
 
@@ -1035,7 +1047,7 @@ static async Task ApplyDeletionPolicyAsync(MailArchiverDbContext context, Deleti
             Timestamp = DateTime.UtcNow,
             SearchParameters = deletionAllowed
                 ? "Email deletion is enabled by configuration (DeletionPolicy:DeletionAllowed=true). Archived emails are unlocked."
-                : "Email deletion is disabled by configuration (DeletionPolicy:DeletionAllowed=false). Archived emails are locked (compliance)."
+                : MailArchiver.Services.Shared.LogText.Event("DeletionLockPermanent")
         };
 
         context.AccessLogs.Add(logEntry);

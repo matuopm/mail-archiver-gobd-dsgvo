@@ -2884,6 +2884,7 @@ namespace MailArchiver.Controllers
             if (!_deletionPolicy.DeletionAllowed)
             {
                 _logger.LogWarning("Email deletion blocked by policy (DeletionPolicy:DeletionAllowed=false). Email ID: {EmailId}", id);
+                await LogRefusedDeletionAsync(LogText.Event("DeletionRefusedEmail", id), id);
                 TempData["ErrorMessage"] = _localizer?["DeletionDisabledMessage"] ?? "Email deletion is disabled by configuration.";
                 return Redirect(returnUrl ?? Url.Action("Index"));
             }
@@ -2947,6 +2948,22 @@ namespace MailArchiver.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [SelfManagerRequired]
+        /// <summary>Records a refused deletion attempt in the access log (GoBD: attempts are traceable).</summary>
+        private async Task LogRefusedDeletionAsync(string message, int? emailId = null)
+        {
+            var username = _authService?.GetCurrentUserDisplayName(HttpContext);
+            if (_accessLogService == null || string.IsNullOrEmpty(username))
+                return;
+            try
+            {
+                await _accessLogService.LogAccessAsync(username, AccessLogType.Deletion, emailId: emailId, searchParameters: message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to log refused deletion");
+            }
+        }
+
         public async Task<IActionResult> DeleteSelected(List<int> ids, string returnUrl = null)
         {
             if (ids == null || !ids.Any())
@@ -2958,6 +2975,7 @@ namespace MailArchiver.Controllers
             if (!_deletionPolicy.DeletionAllowed)
             {
                 _logger.LogWarning("Bulk email deletion blocked by policy (DeletionPolicy:DeletionAllowed=false). Requested count: {Count}", ids.Count);
+                await LogRefusedDeletionAsync(LogText.Event("DeletionRefusedSelected", ids.Count));
                 TempData["ErrorMessage"] = _localizer?["DeletionDisabledMessage"] ?? "Email deletion is disabled by configuration.";
                 return Redirect(returnUrl ?? Url.Action("Index"));
             }

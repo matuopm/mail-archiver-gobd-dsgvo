@@ -20,6 +20,7 @@ namespace MailArchiver.Data
         public DbSet<AuditExportJob> AuditExportJobs { get; set; }
         public DbSet<DashboardStatsCache> DashboardStatsCaches { get; set; }
         public DbSet<ArchivedEmailSource> ArchivedEmailSources { get; set; }
+        public DbSet<RetentionHold> RetentionHolds { get; set; }
 
         public MailArchiverDbContext(DbContextOptions<MailArchiverDbContext> options)
             : base(options)
@@ -469,6 +470,22 @@ namespace MailArchiver.Data
 
             modelBuilder.Entity<ArchivedEmailSource>()
                 .ToTable("ArchivedEmailSources", "archive_worm");
+
+            // RetentionHold: pauses the automatic deletion after the retention period
+            modelBuilder.Entity<RetentionHold>()
+                .Property(h => h.Reason)
+                .HasColumnType("text");
+
+            modelBuilder.Entity<RetentionHold>()
+                .Property(h => h.StartedBy)
+                .HasMaxLength(255);
+
+            modelBuilder.Entity<RetentionHold>()
+                .Property(h => h.EndedBy)
+                .HasMaxLength(255);
+
+            modelBuilder.Entity<RetentionHold>()
+                .ToTable("RetentionHolds", "mail_archiver");
 
             // AccountStorageBackfillState entity configuration
             modelBuilder.Entity<AccountStorageBackfillState>()

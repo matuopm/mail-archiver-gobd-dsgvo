@@ -120,6 +120,8 @@ AppPackages/
 
 # Andere
 sql/
+# SQL scripts for administrators belong to the docs (e.g. hardened archive_worm upgrades)
+!doc/sql/
 *.Cache
 ClientBin/
 [Ss]tyle[Cc]op.*
