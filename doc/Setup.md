@@ -6,6 +6,10 @@
 
 This guide provides detailed instructions for setting up the Mail Archiver application using Docker Compose.
 
+> **Ready-made template for a hardened installation:** [`deploy/`](../deploy/LIESMICH.md) contains a
+> Docker Compose setup in which the application connects with its own non-superuser role and the
+> database is not reachable from outside, plus the hardening script. Instructions in German.
+
 ## 🛠️ Prerequisites
 
 - [Docker](https://www.docker.com/products/docker-desktop)

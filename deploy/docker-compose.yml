@@ -1,0 +1,62 @@
+# Mail-Archiver GoBD: Installationsvorlage fuer einen Kunden.
+# Die Datenbank ist von Anfang an getrennt eingerichtet:
+#   - DB_ADMIN_USER   = Datenbank-Verwalter (Superuser), nur fuer Wartung
+#   - mailarchiver_app = Rolle der Anwendung, kein Superuser
+# Reihenfolge der Inbetriebnahme: siehe LIESMICH.md
+name: mailarchiver-gobd
+
+networks:
+  intern:
+
+volumes:
+  pgdata:
+  keys:
+
+services:
+  app:
+    # Gebaut aus diesem Repository (Verzeichnis oberhalb von deploy/)
+    build:
+      context: ..
+    image: mailarchiver-gobd:lokal
+    container_name: mailarchiver-gobd-app
+    # Bei einem Fehler der Datenbank-Einrichtung beendet sich die App mit einer FATAL-Zeile.
+    # "unless-stopped" startet sie danach neu; die Ursache steht im Log.
+    restart: unless-stopped
+    environment:
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=${DB_NAME};Username=mailarchiver_app;Password=${APP_DB_PASSWORD};
+      - Authentication__Username=${ADMIN_USER}
+      - Authentication__Password=${ADMIN_PASSWORD}
+      - TimeZone__DisplayTimeZoneId=Europe/Berlin
+      - MailSync__IntervalMinutes=15
+    ports:
+      - "${WEB_PORT}:5000"
+    networks:
+      - intern
+    volumes:
+      - keys:/app/DataProtection-Keys
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:17-alpine
+    container_name: mailarchiver-gobd-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_ADMIN_USER}
+      POSTGRES_PASSWORD: ${DB_ADMIN_PASSWORD}
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD}
+    # Kein veroeffentlichter Port: Die Datenbank ist nur im eigenen Netzwerk erreichbar.
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # Laeuft nur beim allerersten Start mit leerem Datenverzeichnis
+      - ./initdb:/docker-entrypoint-initdb.d:ro
+    networks:
+      - intern
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_ADMIN_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
