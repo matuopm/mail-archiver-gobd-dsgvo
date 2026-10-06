@@ -1,6 +1,9 @@
 # 📧 Mail-Archiver GoBD
 
-**E-Mail-Archiv für Selbstständige und kleine Unternehmen, ausgelegt auf GoBD und DSGVO**
+**E-Mail-Archiv für Selbstständige und kleine Unternehmen, nach bestem Wissen ausgelegt auf GoBD und DSGVO**
+
+> [!WARNING]
+> **In Entwicklung.** Dieser Fork ist mit Unterstützung von KI erstellt und kann Fehler enthalten. Er ist nach bestem Wissen und Gewissen auf die Anforderungen von GoBD und DSGVO ausgelegt, aber rechtlich nicht geprüft. Eine Zusicherung der Konformität gibt es nicht. Vor dem Einsatz bitte mit Steuerberatung und gegebenenfalls Datenschutzbeauftragten abstimmen.
 
 Dieser Fork von [Mail-Archiver](https://github.com/s1t5/mail-archiver) speichert jede E-Mail zusätzlich im Original mit SHA-256-Prüfsumme in einem unveränderbaren Speicher, bewahrt sie 8 Jahre auf und löscht sie danach automatisch. Manuelles Löschen gibt es nicht. Zugriffe werden in einem geschützten Protokoll festgehalten, und für Betriebsprüfungen gibt es eine eigene Rolle nur zum Lesen.
 
