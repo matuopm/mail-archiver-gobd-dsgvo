@@ -185,20 +185,6 @@
     <script src="~/js/list-view.js" asp-append-version="true"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            @foreach (var item in Model)
-            {
-                <text>
-                // Handle delete account confirmation for item @item.Id
-                document.getElementById('deleteAccountModal-@item.Id-Confirm').addEventListener('click', function() {
-                    window.location.href = '@Url.Action("Delete", "MailAccounts", new { id = item.Id })';
-                });
-                </text>
-            }
-        });
-    </script>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
             ListView.init({
                 searchInputId: 'accountSearch',
                 pageInfoId: 'accountPageInfo',
@@ -219,32 +205,6 @@
         });
     </script>
 
-    @foreach (var item in Model)
-    {
-        var deleteAccountModal = new ModalViewModel
-        {
-            Id = "deleteAccountModal-" + item.Id,
-            Title = Localizer["DeleteEmailAccountTitle"].ToString(),
-            Message = string.Format(Localizer["DeleteAccountConfirm"].ToString(), item.EmailAddress),
-            IncludeList = true,
-            ListTitle1 = Localizer["WhatWillBeDeleted"].ToString(),
-            ListItems1 = new List<string> {
-                Localizer["DeleteItemAccountConfig"].ToString()
-            },
-            ListTitle2 = Localizer["ThisAction"].ToString(),
-            ListItems2 = new List<string> {
-                Localizer["ActionCannotBeUndone"].ToString(),
-                Localizer["ActionCannotBeRecovered"].ToString()
-            },
-            ShowWarning = true,
-            WarningMessage = Localizer["DeletionCannotBeUndone"].ToString(),
-            ConfirmButtonText = Localizer["Delete"].ToString(),
-            ConfirmButtonClass = "btn-danger",
-            CancelButtonText = Localizer["Cancel"].ToString()
-        };
-        
-        @await Html.PartialAsync("_ModalTemplate", deleteAccountModal)
-    }
 }
 
     @* Mobile/Tablet Cards - bis groÃŸe Bildschirme *@

@@ -520,11 +520,10 @@
                 </h6>
                 <p class="small text-muted mb-3">@Localizer["DangerZoneInfo"]</p>
                 <div class="d-flex flex-column flex-md-row gap-2">
-                    <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal"
-                        data-bs-target="#deleteAccountModal-@Model.Id">
+                    <a class="btn btn-danger btn-sm" asp-action="Delete" asp-route-id="@Model.Id">
                         <i class="bi bi-trash-fill"></i>
                         @Localizer["DeleteEmailAccountTitle"]
-                    </button>
+                    </a>
                 </div>
             </div>
         </div>
@@ -547,41 +546,11 @@
         ConfirmButtonClass = "btn-warning",
         CancelButtonText = Localizer["Cancel"].ToString()
     };
-
-    var deleteAccountModal = new ModalViewModel
-    {
-        Id = "deleteAccountModal-" + Model.Id,
-        Title = Localizer["DeleteEmailAccountTitle"].ToString(),
-        Message = string.Format(Localizer["DeleteAccountConfirm"].ToString(), Model.EmailAddress),
-        IncludeList = true,
-        ListTitle1 = Localizer["WhatWillBeDeleted"].ToString(),
-        ListItems1 = new List<string> { Localizer["DeleteItemAccountConfig"].ToString() },
-        ListTitle2 = Localizer["ThisAction"].ToString(),
-        ListItems2 = new List<string>
-        {
-            Localizer["ActionCannotBeUndone"].ToString(),
-            Localizer["ActionCannotBeRecovered"].ToString()
-        },
-        ShowWarning = true,
-        WarningMessage = Localizer["DeletionCannotBeUndone"].ToString(),
-        ConfirmButtonText = Localizer["DeleteEmailAccountTitle"].ToString(),
-        ConfirmButtonClass = "btn-danger",
-        CancelButtonText = Localizer["Cancel"].ToString()
-    };
 }
 
 @await Html.PartialAsync("_ModalTemplate", fullResyncModal)
-@await Html.PartialAsync("_ModalTemplate", deleteAccountModal)
 
 @section Scripts {
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            document.getElementById('deleteAccountModal-@Model.Id-Confirm').addEventListener('click', function () {
-                window.location.href = '@Url.Action("Delete", "MailAccounts", new { id = Model.Id })';
-            });
-        });
-    </script>
-
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('fullResyncModal-Confirm').addEventListener('click', function () {

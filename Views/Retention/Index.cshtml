@@ -13,15 +13,6 @@
     <h1 class="h3 mb-1"><i class="bi bi-hourglass-split me-2"></i>@Localizer["Retention"]</h1>
     <p class="text-muted">@Localizer["RetentionDescription"]</p>
 
-    @if (TempData["SuccessMessage"] != null)
-    {
-        <div class="alert alert-success alert-dismissible fade show" role="alert">@TempData["SuccessMessage"]<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>
-    }
-    @if (TempData["ErrorMessage"] != null)
-    {
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">@TempData["ErrorMessage"]<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>
-    }
-
     <div class="card mb-4">
         <div class="card-header bg-light"><h5 class="mb-0">@Localizer["RetentionOverview"]</h5></div>
         <div class="card-body">
@@ -40,13 +31,19 @@
 
     <div class="card mb-4 @(activeHold != null ? "border-warning" : "")">
         <div class="card-header @(activeHold != null ? "bg-warning" : "bg-light")">
-            <h5 class="mb-0">@Localizer["RetentionPauseTitle"]</h5>
+            <h5 class="mb-0">@(activeHold != null ? Localizer["RetentionPausedTitle"] : Localizer["RetentionPauseTitle"])</h5>
         </div>
         <div class="card-body">
             @if (activeHold != null)
             {
-                <p><strong>@Localizer["RetentionPausedSince", activeHold.StartedAt.ToLocalTime().ToString("g"), activeHold.StartedBy]</strong></p>
-                <p>@Localizer["RetentionPauseReason"]: @activeHold.Reason</p>
+                <dl class="row">
+                    <dt class="col-sm-3">@Localizer["RetentionPausedSince"]</dt>
+                    <dd class="col-sm-9"><span class="utc-timestamp" data-utc-time="@activeHold.StartedAt.ToString("yyyy-MM-ddTHH:mm:ss")">@activeHold.StartedAt.ToString("g")</span></dd>
+                    <dt class="col-sm-3">@Localizer["RetentionPausedBy"]</dt>
+                    <dd class="col-sm-9">@activeHold.StartedBy</dd>
+                    <dt class="col-sm-3">@Localizer["RetentionPauseReason"]</dt>
+                    <dd class="col-sm-9">@activeHold.Reason</dd>
+                </dl>
                 <form asp-action="Resume" method="post">
                     @Html.AntiForgeryToken()
                     <button type="submit" class="btn btn-success"><i class="bi bi-play-fill"></i> @Localizer["RetentionResume"]</button>
@@ -86,8 +83,17 @@
                         @foreach (var hold in Model)
                         {
                             <tr>
-                                <td>@hold.StartedAt.ToLocalTime().ToString("g") (@hold.StartedBy)</td>
-                                <td>@(hold.EndedAt.HasValue ? $"{hold.EndedAt.Value.ToLocalTime():g} ({hold.EndedBy})" : "–")</td>
+                                <td><span class="utc-timestamp" data-utc-time="@hold.StartedAt.ToString("yyyy-MM-ddTHH:mm:ss")">@hold.StartedAt.ToString("g")</span> (@hold.StartedBy)</td>
+                                <td>
+                                    @if (hold.EndedAt.HasValue)
+                                    {
+                                        <span class="utc-timestamp" data-utc-time="@hold.EndedAt.Value.ToString("yyyy-MM-ddTHH:mm:ss")">@hold.EndedAt.Value.ToString("g")</span> <text>(@hold.EndedBy)</text>
+                                    }
+                                    else
+                                    {
+                                        <text>–</text>
+                                    }
+                                </td>
                                 <td>@hold.Reason</td>
                             </tr>
                         }

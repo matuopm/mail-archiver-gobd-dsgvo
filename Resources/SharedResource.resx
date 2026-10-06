@@ -3524,7 +3524,7 @@
     <value>Resume automatic deletion</value>
   </data>
   <data name="RetentionPausedSince" xml:space="preserve">
-    <value>Automatic deletion is paused since {0} by {1}.</value>
+    <value>Paused since</value>
   </data>
   <data name="RetentionPauseReason" xml:space="preserve">
     <value>Reason</value>
@@ -3546,5 +3546,11 @@
   </data>
   <data name="RetentionResumed" xml:space="preserve">
     <value>Automatic deletion is running again.</value>
+  </data>
+  <data name="RetentionPausedBy" xml:space="preserve">
+    <value>By</value>
+  </data>
+  <data name="RetentionPausedTitle" xml:space="preserve">
+    <value>Automatic deletion is paused</value>
   </data>
 </root>

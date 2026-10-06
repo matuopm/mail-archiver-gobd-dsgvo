@@ -3538,7 +3538,7 @@
     <value>Automatische Löschung fortsetzen</value>
   </data>
   <data name="RetentionPausedSince" xml:space="preserve">
-    <value>Die automatische Löschung ist seit {0} angehalten (von {1}).</value>
+    <value>Angehalten seit</value>
   </data>
   <data name="RetentionPauseReason" xml:space="preserve">
     <value>Grund</value>
@@ -3560,5 +3560,11 @@
   </data>
   <data name="RetentionResumed" xml:space="preserve">
     <value>Die automatische Löschung läuft wieder.</value>
+  </data>
+  <data name="RetentionPausedBy" xml:space="preserve">
+    <value>Von</value>
+  </data>
+  <data name="RetentionPausedTitle" xml:space="preserve">
+    <value>Automatische Löschung ist angehalten</value>
   </data>
 </root>
