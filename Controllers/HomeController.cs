@@ -44,8 +44,8 @@ namespace MailArchiver.Controllers
             
             DashboardViewModel model;
             
-            // If user is admin, show all accounts, otherwise show only assigned accounts
-            if (currentUser != null && currentUser.IsAdmin)
+            // Admins and auditors see all accounts, everyone else only assigned accounts
+            if (currentUser != null && (currentUser.IsAdmin || currentUser.IsAuditor))
             {
                 model = await _emailCoreService.GetDashboardStatisticsAsync(LastRunHadIssues);
             }

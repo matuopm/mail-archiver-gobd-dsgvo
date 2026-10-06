@@ -68,6 +68,14 @@
                         </div>
                         <div class="col-md-4">
                             <div class="mb-3 form-check">
+                                <input asp-for="IsAuditor" class="form-check-input" />
+                                <label class="form-check-label">@Localizer["Auditor"]</label>
+                                <div class="form-text">@Localizer["AuditorRoleDescription"]</div>
+                                <span asp-validation-for="IsAuditor" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3 form-check">
                                 <input asp-for="IsActive" class="form-check-input" />
                                 <label class="form-check-label">@Localizer["Active"]</label>
                             </div>

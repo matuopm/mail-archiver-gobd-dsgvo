@@ -66,6 +66,10 @@ namespace MailArchiver.Auth.Handlers
             {
                 claims.Add(new Claim(ClaimTypes.Role, "SelfManager"));
             }
+            if (user.IsAuditor)
+            {
+                claims.Add(new Claim(ClaimTypes.Role, "Auditor"));
+            }
 
             var identity = new ClaimsIdentity(claims, SchemeName);
             var principal = new ClaimsPrincipal(identity);

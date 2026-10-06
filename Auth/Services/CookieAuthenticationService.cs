@@ -70,6 +70,10 @@ namespace MailArchiver.Auth.Services
             {
                 claims.Add(new Claim(ClaimTypes.Role, "SelfManager"));
             }
+            if (user.IsAuditor)
+            {
+                claims.Add(new Claim(ClaimTypes.Role, "Auditor"));
+            }
 
             var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
             var claimsPrincipal = new ClaimsPrincipal(claimsIdentity);
@@ -168,6 +172,14 @@ namespace MailArchiver.Auth.Services
             var isSelfManager = context.User?.IsInRole("SelfManager") ?? false;
             _logger.LogDebug("User '{Username}' claims self-manager status: {IsSelfManager}", username, isSelfManager);
             return isSelfManager;
+        }
+
+        public bool IsCurrentUserAuditor(HttpContext context)
+        {
+            if (string.IsNullOrEmpty(GetCurrentUserDisplayName(context)))
+                return false;
+
+            return context.User?.IsInRole("Auditor") ?? false;
         }
     }
 }

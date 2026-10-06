@@ -124,7 +124,7 @@ namespace MailArchiver.Controllers
             var authService = HttpContext.RequestServices.GetService<MailArchiver.Services.IAuthenticationService>();
             var userService = HttpContext.RequestServices.GetService<IUserService>();
             
-            if (authService != null && userService != null && !authService.IsCurrentUserAdmin(HttpContext))
+            if (authService != null && userService != null && !authService.IsCurrentUserAdmin(HttpContext) && !authService.IsCurrentUserAuditor(HttpContext))
             {
                 var username = authService.GetCurrentUserDisplayName(HttpContext);
                 var user = await userService.GetUserByUsernameAsync(username);
@@ -715,7 +715,7 @@ namespace MailArchiver.Controllers
             var authService = HttpContext.RequestServices.GetService<MailArchiver.Services.IAuthenticationService>();
             var userService = HttpContext.RequestServices.GetService<IUserService>();
             
-            if (authService != null && userService != null && !authService.IsCurrentUserAdmin(HttpContext))
+            if (authService != null && userService != null && !authService.IsCurrentUserAdmin(HttpContext) && !authService.IsCurrentUserAuditor(HttpContext))
             {
                 var username = authService.GetCurrentUserDisplayName(HttpContext);
                 var user = await userService.GetUserByUsernameAsync(username);
@@ -809,6 +809,7 @@ namespace MailArchiver.Controllers
         // GET: Emails/Restore/5
         [HttpGet]
         [EmailAccessRequired]
+        [AuditorForbidden]
         public async Task<IActionResult> Restore(int id)
         {
             var email = await _context.ArchivedEmails
@@ -1248,6 +1249,7 @@ namespace MailArchiver.Controllers
 
         // GET: Emails/BatchRestore - Zeigt das Form an
         [HttpGet]
+        [AuditorForbidden]
         public async Task<IActionResult> BatchRestore()
         {
             var idsString = HttpContext.Session.GetString("BatchRestoreIds");
@@ -1604,6 +1606,7 @@ namespace MailArchiver.Controllers
 
         // GET: Emails/StartAsyncBatchRestoreFromAccount
         [HttpGet]
+        [AuditorForbidden]
         public async Task<IActionResult> StartAsyncBatchRestoreFromAccount(int accountId, string returnUrl = null, bool preserveFolders = false)
         {
             var account = await _context.MailAccounts.FindAsync(accountId);
@@ -2367,6 +2370,7 @@ namespace MailArchiver.Controllers
         }
 
         // POST: Emails/CancelSelectedEmailsExport
+        [AuditorAllowed]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult CancelSelectedEmailsExport(string jobId, string returnUrl = null)
@@ -2499,6 +2503,7 @@ namespace MailArchiver.Controllers
         }
 
         [HttpGet]
+        [AuditorForbidden]
         public async Task<JsonResult> GetFolders(int accountId)
         {
             _logger.LogInformation("GetFolders called with accountId: {AccountId}", accountId);
@@ -2572,7 +2577,7 @@ namespace MailArchiver.Controllers
                 var authService = HttpContext.RequestServices.GetService<MailArchiver.Services.IAuthenticationService>();
                 var userService = HttpContext.RequestServices.GetService<IUserService>();
                 
-                if (authService != null && userService != null && !authService.IsCurrentUserAdmin(HttpContext))
+                if (authService != null && userService != null && !authService.IsCurrentUserAdmin(HttpContext) && !authService.IsCurrentUserAuditor(HttpContext))
                 {
                     var username = authService.GetCurrentUserDisplayName(HttpContext);
                     var user = await userService.GetUserByUsernameAsync(username);
@@ -3196,6 +3201,7 @@ namespace MailArchiver.Controllers
         }
         
         // POST: Emails/ExportSelected
+        [AuditorAllowed]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ExportSelected(List<int> ids, string format = "EML", string returnUrl = null)
@@ -3230,7 +3236,7 @@ namespace MailArchiver.Controllers
                 var authService = HttpContext.RequestServices.GetService<MailArchiver.Services.IAuthenticationService>();
                 var userService = HttpContext.RequestServices.GetService<IUserService>();
 
-                if (authService != null && userService != null && !authService.IsCurrentUserAdmin(HttpContext))
+                if (authService != null && userService != null && !authService.IsCurrentUserAdmin(HttpContext) && !authService.IsCurrentUserAuditor(HttpContext))
                 {
                     var username = authService.GetCurrentUserDisplayName(HttpContext);
                     var user = await userService.GetUserByUsernameAsync(username);

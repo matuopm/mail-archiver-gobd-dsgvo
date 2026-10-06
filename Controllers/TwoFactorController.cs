@@ -1,3 +1,4 @@
+using MailArchiver.Attributes;
 using MailArchiver.Models;
 using MailArchiver.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -10,6 +11,7 @@ using System.Security.Cryptography;
 
 namespace MailArchiver.Controllers
 {
+    [AuditorAllowed]
     public class TwoFactorController : Controller
     {
         private readonly IUserService _userService;

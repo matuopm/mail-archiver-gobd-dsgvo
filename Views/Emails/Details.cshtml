@@ -1,9 +1,11 @@
 ﻿@using Microsoft.AspNetCore.Http.Extensions
 @inject Microsoft.Extensions.Localization.IStringLocalizer<MailArchiver.SharedResource> Localizer
+@inject MailArchiver.Services.IAuthenticationService AuthService
 @model MailArchiver.Models.ViewModels.EmailDetailViewModel
 @{
     ViewData["Title"] = @Localizer["EmailDetails"];
     var returnUrl = ViewBag.ReturnUrl?.ToString() ?? Url.Action("Index");
+    var canRestore = !AuthService.IsCurrentUserAuditor(Context);
 }
 
 <div class="container-fluid">
@@ -24,10 +26,13 @@
                     class="btn btn-outline-primary btn-sm">
                     <i class="bi bi-envelope"></i> @Localizer["ExportEML"]
                 </a>
-                <a asp-action="Restore" asp-route-id="@Model.Email.Id"
-                    asp-route-returnUrl="@Context.Request.GetDisplayUrl()" class="btn btn-success btn-sm">
-                    <i class="bi bi-envelope-arrow-up"></i> @Localizer["CopyToMailbox"]
-                </a>
+                @if (canRestore)
+                {
+                    <a asp-action="Restore" asp-route-id="@Model.Email.Id"
+                        asp-route-returnUrl="@Context.Request.GetDisplayUrl()" class="btn btn-success btn-sm">
+                        <i class="bi bi-envelope-arrow-up"></i> @Localizer["CopyToMailbox"]
+                    </a>
+                }
             </div>
         </div>
 
@@ -43,10 +48,13 @@
                 class="btn btn-outline-primary">
                 <i class="bi bi-envelope"></i> @Localizer["ExportEML"]
             </a>
-            <a asp-action="Restore" asp-route-id="@Model.Email.Id"
-                asp-route-returnUrl="@Context.Request.GetDisplayUrl()" class="btn btn-success">
-                <i class="bi bi-envelope-arrow-up"></i> @Localizer["CopyToMailbox"]
-            </a>
+            @if (canRestore)
+            {
+                <a asp-action="Restore" asp-route-id="@Model.Email.Id"
+                    asp-route-returnUrl="@Context.Request.GetDisplayUrl()" class="btn btn-success">
+                    <i class="bi bi-envelope-arrow-up"></i> @Localizer["CopyToMailbox"]
+                </a>
+            }
         </div>
     </div>
 

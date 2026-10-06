@@ -22,6 +22,8 @@
                             { <span class="badge bg-primary">@Localizer["Admin"]</span> }
                             else if (Model.IsSelfManager)
                             { <span class="badge bg-info">@Localizer["SelfManager"]</span> }
+                            else if (Model.IsAuditor)
+                            { <span class="badge bg-warning text-dark">@Localizer["Auditor"]</span> }
                             else
                             { <span class="badge bg-secondary">@Localizer["User"]</span> }
                         </dd>

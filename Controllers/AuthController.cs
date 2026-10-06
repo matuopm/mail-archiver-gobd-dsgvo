@@ -1,3 +1,4 @@
+using MailArchiver.Attributes;
 using MailArchiver.Auth.Handlers;
 using MailArchiver.Auth.Options;
 using MailArchiver.Data;
@@ -15,6 +16,7 @@ using Microsoft.Extensions.Options;
 
 namespace MailArchiver.Controllers
 {
+    [AuditorAllowed]
     public class AuthController : Controller
     {
         private readonly AuthenticationHandler _authenticationHandler;

@@ -472,6 +472,31 @@ public class UserServiceTests
     }
 
     [Fact]
+    public async Task IsUserAuthorizedForAccountAsync_Auditor_ReadsAllAccounts()
+    {
+        await using var scope = await _fixture.CreateTransactionalContextAsync();
+        var ctx = scope.Context;
+        try
+        {
+            var auditor = await SeedUserAsync(ctx);
+            auditor.IsAuditor = true;
+            await ctx.SaveChangesAsync();
+            var acct = new MailAccount
+            {
+                Name = "audited", EmailAddress = $"{Guid.NewGuid():N}@t.local",
+                Provider = ProviderType.IMAP, IsEnabled = true, LastSync = DateTime.UtcNow
+            };
+            ctx.MailAccounts.Add(acct);
+            await ctx.SaveChangesAsync();
+            var svc = ServiceFactory.CreateUserService(ctx);
+
+            // No assignment needed: the auditor reads every account
+            Assert.True(await svc.IsUserAuthorizedForAccountAsync(auditor.Id, acct.Id));
+        }
+        finally { await scope.RollbackAsync(); }
+    }
+
+    [Fact]
     public async Task IsUserAuthorizedForAccountAsync_SelfManager_OnlyAssignedAccounts()
     {
         await using var scope = await _fixture.CreateTransactionalContextAsync();

@@ -103,6 +103,11 @@ namespace MailArchiver.Controllers
                 }
             }
 
+            if (model.IsAuditor && (model.IsAdmin || model.IsSelfManager))
+            {
+                ModelState.AddModelError("IsAuditor", _localizer["AuditorRoleExclusive"]);
+            }
+
             if (!ModelState.IsValid)
             {
                 _logger.LogWarning("ModelState is invalid. Errors: {Errors}",
@@ -121,10 +126,11 @@ namespace MailArchiver.Controllers
                     password,
                     model.IsAdmin);
 
-                // Set self-manager flag if specified
-                if (model.IsSelfManager)
+                // Set self-manager or auditor flag if specified
+                if (model.IsSelfManager || model.IsAuditor)
                 {
-                    newUser.IsSelfManager = true;
+                    newUser.IsSelfManager = model.IsSelfManager;
+                    newUser.IsAuditor = model.IsAuditor;
                     await _userService.UpdateUserAsync(newUser);
                 }
 
@@ -176,6 +182,7 @@ namespace MailArchiver.Controllers
                 Email = user.Email,
                 IsAdmin = user.IsAdmin,
                 IsSelfManager = user.IsSelfManager,
+                IsAuditor = user.IsAuditor,
                 IsActive = user.IsActive
             };
 
@@ -247,6 +254,11 @@ namespace MailArchiver.Controllers
                     string.Join(", ", ModelState.SelectMany(x => x.Value.Errors.Select(e => $"{x.Key}: {e.ErrorMessage}"))));
             }
 
+            if (model.IsAuditor && (model.IsAdmin || model.IsSelfManager))
+            {
+                ModelState.AddModelError("IsAuditor", _localizer["AuditorRoleExclusive"]);
+            }
+
             if (ModelState.IsValid)
             {
                 try
@@ -271,6 +283,7 @@ namespace MailArchiver.Controllers
                     existingUser.Email = model.Email;
                     existingUser.IsAdmin = model.IsAdmin;
                     existingUser.IsSelfManager = model.IsSelfManager;
+                    existingUser.IsAuditor = model.IsAuditor;
                     existingUser.IsActive = model.IsActive;
 
                     // SECURITY: When activating an OIDC user, also clear the RequiresApproval flag
@@ -546,6 +559,7 @@ namespace MailArchiver.Controllers
         }
 
         // POST: Users/ChangePassword
+        [AuditorAllowed]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ChangePassword(string? currentPassword, string newPassword, string confirmNewPassword)

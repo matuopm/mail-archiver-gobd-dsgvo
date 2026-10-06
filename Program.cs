@@ -570,6 +570,8 @@ builder.Services.AddControllersWithViews(options =>
 {
     // Add global filter for password change requirement
     options.Filters.Add<MailArchiver.Attributes.PasswordChangeRequiredAttribute>();
+    // Auditors may only read (see Attributes/AuditorAccessAttributes.cs)
+    options.Filters.Add<MailArchiver.Attributes.AuditorReadOnlyFilter>();
 })
     .AddViewLocalization();
 

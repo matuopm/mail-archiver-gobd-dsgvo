@@ -76,6 +76,10 @@
                                     {
                                         @Localizer["SelfManager"]
                                     }
+                                    else if (item.IsAuditor)
+                                    {
+                                        @Localizer["Auditor"]
+                                    }
                                     else
                                     {
                                         @Localizer["User"]
@@ -220,6 +224,10 @@
                         else if (item.IsSelfManager)
                         {
                             @Localizer["SelfManager"]
+                        }
+                        else if (item.IsAuditor)
+                        {
+                            @Localizer["Auditor"]
                         }
                         else
                         {

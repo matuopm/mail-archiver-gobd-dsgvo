@@ -3589,4 +3589,13 @@
   <data name="AccessLogChainBroken" xml:space="preserve">
     <value>Log damaged: entry no. {0} does not match the chain. {1} entries before it are intact; check value of the last intact entry: {2}</value>
   </data>
+  <data name="Auditor" xml:space="preserve">
+    <value>Auditor (read only)</value>
+  </data>
+  <data name="AuditorRoleDescription" xml:space="preserve">
+    <value>Can search, open and download the emails of all mail accounts and read the whole access log, e.g. for a tax auditor. Cannot change, restore or delete anything.</value>
+  </data>
+  <data name="AuditorRoleExclusive" xml:space="preserve">
+    <value>An auditor cannot also be admin or self-manager.</value>
+  </data>
 </root>

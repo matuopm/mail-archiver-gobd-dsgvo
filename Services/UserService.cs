@@ -418,6 +418,13 @@ namespace MailArchiver.Services
                 return true;
             }
 
+            // Auditors read every account; the AuditorReadOnlyFilter keeps them from changing anything
+            if (await _context.Users.AnyAsync(u => u.Id == userId && u.IsAuditor))
+            {
+                _logger.LogInformation("User {UserId} is auditor, granting read access to account {MailAccountId}", userId, mailAccountId);
+                return true;
+            }
+
             // SECURITY (P1): Self-managers, like every other non-admin user, may only use
             // accounts they are assigned to. The previous blanket grant contradicted
             // IAccountAccessResolver and HasAccessToAccountAsync and let a self-manager open

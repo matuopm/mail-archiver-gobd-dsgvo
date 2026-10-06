@@ -11,5 +11,7 @@ namespace MailArchiver.Services
         int? GetCurrentUserId(HttpContext context);
         bool IsCurrentUserAdmin(HttpContext context);
         bool IsCurrentUserSelfManager(HttpContext context);
+        /// <summary>Auditor: reads all mail accounts, may not change anything.</summary>
+        bool IsCurrentUserAuditor(HttpContext context);
     }
 }
