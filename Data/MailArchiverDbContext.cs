@@ -239,7 +239,12 @@ namespace MailArchiver.Data
                 .HasConversion<string>()
                 .HasMaxLength(10);
                 
-            // AccessLog entity configuration
+            // AccessLog entity configuration. Write-once in archive_worm; the columns
+            // ChainSeq, PrevHash and Hash are filled by a database trigger and not mapped
+            // (see Data/AuditLogProtectionSql.cs).
+            modelBuilder.Entity<AccessLog>()
+                .ToTable("AccessLogs", "archive_worm");
+
             modelBuilder.Entity<AccessLog>()
                 .Property(a => a.Username)
                 .HasColumnType("text");

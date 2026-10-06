@@ -80,6 +80,44 @@ For mobile devices, logs are displayed in card format.
 - **Non-admin users**: Can only view their own logs
 - **Admin users**: Can view logs for all users and filter by user
 
+## 🔗 Protection against later changes
+
+The access log is write-once. It lives in the schema `archive_worm` next to the stored
+original messages ([Write-Once Storage](WormStorage.md)), and the database enforces:
+
+- Entries can only be added. `UPDATE`, `DELETE` and `TRUNCATE` on
+  `archive_worm."AccessLogs"` are rejected, also for the application itself.
+- Every new entry gets a sequence number (`ChainSeq`), the hash of the previous entry
+  (`PrevHash`) and its own SHA-256 hash (`Hash`) over all its fields plus `PrevHash`. The
+  database trigger sets these columns, not the application.
+
+Whoever bypasses the triggers (only possible for a database superuser, or for the owner
+of `archive_worm` when it was not [hardened](WormStorage.md#-hardening-separate-owner-role-recommended-for-compliance-setups))
+and changes, deletes or inserts an entry breaks the chain from that entry on.
+
+### Checking the log
+
+Admins click **Check log** on the Logs page. The result shows how many entries were checked
+and the check value (hash) of the last entry; if the chain is broken, it names the first
+entry that does not fit. The same check in SQL:
+
+```sql
+SELECT * FROM archive_worm.verify_access_log();
+-- checked | first_broken_seq | head_hash
+```
+
+Removing the newest entries at the end leaves a shorter chain that is still intact. To
+catch that too, note the check value from time to time outside the system (for example
+in the tax adviser's files or a dated email to yourself). A later check must still contain
+an entry with that hash:
+
+```sql
+SELECT "ChainSeq", "Timestamp" FROM archive_worm."AccessLogs" WHERE "Hash" = '<noted value>';
+```
+
+Entries that existed before the upgrade were chained once by the migration, in the order
+they were written; the protection covers them from that point on.
+
 ## 📤 Audit Data Export
 
 Admins can open the dedicated [Audit Data Export](AuditExport.md) page directly from the Logs page. It creates tabular mass data packages (INDEX.XML + CSV) from the archive for external audit tools. Every export run writes two access log entries of the type **Audit Data Export** (start and result), which are listed and filterable on the Logs page like all other entries.

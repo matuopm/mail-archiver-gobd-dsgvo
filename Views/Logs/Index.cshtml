@@ -17,9 +17,17 @@
         <h1 class="h3 mb-0">@Localizer["AccessLog"]</h1>
         @if (isAdmin)
         {
-            <a asp-controller="Logs" asp-action="AuditExport" class="btn btn-outline-primary btn-sm">
-                <i class="bi bi-box-arrow-up me-1"></i>@Localizer["AuditExport"]
-            </a>
+            <div class="d-flex gap-2">
+                <form asp-controller="Logs" asp-action="VerifyChain" method="post" class="mb-0">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-outline-secondary btn-sm" title="@Localizer["AccessLogVerifyHint"]">
+                        <i class="bi bi-shield-check me-1"></i>@Localizer["AccessLogVerify"]
+                    </button>
+                </form>
+                <a asp-controller="Logs" asp-action="AuditExport" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-box-arrow-up me-1"></i>@Localizer["AuditExport"]
+                </a>
+            </div>
         }
     </div>
 

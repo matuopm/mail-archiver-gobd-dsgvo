@@ -188,7 +188,7 @@ public class AuditExportServiceIntegrationTests
         }
         finally
         {
-            // Cleanup: remove all rows created by this test (job history, access logs, emails, account).
+            // Cleanup: remove all rows created by this test (job history, emails, account).
             // Unlock first: the compliance trigger may block DELETEs on locked emails
             // (IsLocked changes are explicitly allowed by the trigger).
             using var cleanupContext = _fixture.CreateContext();
@@ -200,10 +200,7 @@ public class AuditExportServiceIntegrationTests
             {
                 cleanupContext.AuditExportJobs.Remove(row);
             }
-            var logRows = cleanupContext.AccessLogs
-                .Where(l => l.Type == AccessLogType.AuditExport && l.Username == "testadmin")
-                .ToList();
-            cleanupContext.AccessLogs.RemoveRange(logRows);
+            // Access log entries stay: the log is write-once (archive_worm)
             var emails = cleanupContext.ArchivedEmails.Where(e => e.MailAccountId == account.Id).ToList();
             cleanupContext.ArchivedEmails.RemoveRange(emails);
             var accountRow = cleanupContext.MailAccounts.FirstOrDefault(a => a.Id == account.Id);

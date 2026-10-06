@@ -15,7 +15,7 @@ For that, the original message bytes get their own table in a separate schema:
 | Layer | Schema | Content | Changeable |
 |---|---|---|---|
 | Working layer | `mail_archiver` | Parsed fields, folder, search data | Yes (locked rows only by the existing lock rules) |
-| Write-once layer | `archive_worm` | Original `.eml` bytes, SHA-256, capture time | No |
+| Write-once layer | `archive_worm` | Original `.eml` bytes, SHA-256, capture time; the [access log](Logs.md#-protection-against-later-changes) | No |
 
 ## ⚙️ Capture
 
@@ -117,6 +117,22 @@ docker compose exec -T postgres psql -U mailuser -d MailArchiver < doc/sql/Migra
 The script keeps the owner and grants. The migration notices the new function and only
 creates the `RetentionHolds` table.
 
+## ⬆️ Upgrading a hardened database to MigrateV2610_3
+
+`MigrateV2610_3` moves the access log into `archive_worm` and protects it with a hash
+chain (see [Access Log](Logs.md#-protection-against-later-changes)). On a hardened database
+the application may not create objects in `archive_worm`, so it stops at startup the same
+way as described above. Run the script once as database superuser, then start the new
+version:
+
+```bash
+docker compose exec -T postgres psql -U mailuser -d MailArchiver < doc/sql/MigrateV2610_3-audit-log.sql
+```
+
+The script runs the same SQL as the migration and then calls `archive_worm.harden()` again,
+so the moved table also belongs to `mailarchiver_worm_owner` and the application role may
+only read and add entries. The migration then sees the protected table and skips.
+
 ## 🛡️ Hardening: separate owner role (recommended for compliance setups)
 
 Triggers alone only protect against the application. Whoever owns a table can drop its
@@ -171,8 +187,8 @@ SELECT archive_worm.harden('mailarchiver_app');
 ```
 
 This creates the role `mailarchiver_worm_owner` (no login), makes it the owner of the
-schema, the table and all functions in `archive_worm`, and leaves `mailarchiver_app` with
-`SELECT` and `INSERT` only. A different owner role name can be passed as second argument.
+schema, all tables and all functions in `archive_worm` (stored originals and access log),
+and leaves `mailarchiver_app` with `SELECT` and `INSERT` only. A different owner role name can be passed as second argument.
 
 ### Step 3: switch the application to the new role
 
@@ -194,7 +210,8 @@ Keep `POSTGRES_USER` for administration only and do not give its password to the
   store the originals on storage with a retention lock (e.g. S3 Object Lock), which is
   planned as an optional later step.
 - Future migrations that change `archive_worm` must be run by an administrator, because
-  the application no longer owns that schema.
+  the application no longer owns that schema. This also applies to upstream migrations
+  that touch `AccessLogs`: in this fork they have to target `archive_worm."AccessLogs"`.
 - The parsed copy in `mail_archiver` is still controlled by the application (it can be
   unlocked and changed). The original in `archive_worm` and its hash stay the reference
   that any later change can be checked against.
