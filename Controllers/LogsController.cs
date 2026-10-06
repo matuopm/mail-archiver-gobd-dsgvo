@@ -2,6 +2,7 @@ using MailArchiver.Attributes;
 using MailArchiver.Data;
 using MailArchiver.Models;
 using MailArchiver.Services;
+using MailArchiver.Services.Shared;
 using MailArchiver.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -109,6 +110,15 @@ namespace MailArchiver.Controllers
             }
 
             var result = await AccessLogIntegrity.VerifyAsync(_context);
+
+            // The check itself is recorded, with its result and the check value at that moment
+            await _accessLogService.LogAccessAsync(
+                _authenticationService.GetCurrentUserDisplayName(HttpContext) ?? "unknown",
+                AccessLogType.LogVerification,
+                searchParameters: result.IsIntact
+                    ? LogText.Event("AccessLogChainIntact", result.Checked, result.HeadHash ?? "-")
+                    : LogText.Event("AccessLogChainBroken", result.FirstBrokenSeq!, result.Checked, result.HeadHash ?? "-"));
+
             if (result.IsIntact)
             {
                 TempData["SuccessMessage"] = _localizer["AccessLogChainIntact", result.Checked,

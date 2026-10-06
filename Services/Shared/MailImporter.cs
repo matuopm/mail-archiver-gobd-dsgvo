@@ -5,6 +5,7 @@ using MailArchiver.Utilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using MimeKit;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace MailArchiver.Services.Shared
@@ -23,7 +24,14 @@ namespace MailArchiver.Services.Shared
             _attachmentCollector = attachmentCollector;
         }
 
-        public async Task<ImportResult> ImportEmailToDatabase(MimeMessage message, MailAccount account, string jobId, string targetFolder)
+        /// <summary>
+        /// Imports one message. When <paramref name="originalMime"/> is given (the message's bytes
+        /// exactly as they stand in the imported file), it is stored write-once in
+        /// archive_worm."ArchivedEmailSources" with its SHA-256 and <paramref name="sourceKind"/>,
+        /// like an original fetched by IMAP, and the retention period starts.
+        /// </summary>
+        public async Task<ImportResult> ImportEmailToDatabase(MimeMessage message, MailAccount account, string jobId, string targetFolder,
+            byte[]? originalMime = null, string sourceKind = ArchivedEmailSourceKinds.EmlImport)
         {
             try
             {
@@ -212,6 +220,21 @@ namespace MailArchiver.Services.Shared
                         Size = icsBytes.Length
                     });
                     archivedEmail.HasAttachments = true;
+                }
+
+                if (originalMime is { Length: > 0 })
+                {
+                    var sha256 = Convert.ToHexString(SHA256.HashData(originalMime)).ToLowerInvariant();
+                    archivedEmail.ContentHash = sha256;
+                    archivedEmail.HashCreatedAt = DateTime.UtcNow;
+                    context.ArchivedEmailSources.Add(new ArchivedEmailSource
+                    {
+                        ArchivedEmail = archivedEmail,
+                        RawMime = originalMime,
+                        Size = originalMime.Length,
+                        Sha256 = sha256,
+                        Source = sourceKind
+                    });
                 }
 
                 context.ArchivedEmails.Add(archivedEmail);

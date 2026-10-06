@@ -27,8 +27,21 @@ together with their SHA-256 (in the same transaction as the email), and also wri
 to `ArchivedEmails.ContentHash` / `HashCreatedAt`. Storage per email roughly doubles, because
 attachments are kept once in the parsed form and once inside the original.
 
-Not covered yet: emails archived before this version, EML/MBOX import and Microsoft 365
-(Graph) accounts.
+EML and MBOX imports (web upload and the [command line](CLI-Local-Import.md)) do the same
+with the bytes as they stand in the imported file, with origin `eml-import` or
+`mbox-import`:
+
+- **EML (ZIP):** each `.eml` file exactly as it is in the archive, also when its headers had
+  to be repaired for parsing.
+- **MBOX:** each message from its first header line to its end, without the `From ` separator
+  line and the blank line before the next message. Lines quoted as `>From` stay as they are
+  in the file.
+
+The retention period of an imported original also starts at the import, not at the date of
+the email. An email that already exists in the archive is skipped and gets no second
+original.
+
+Not covered yet: emails archived before this version and Microsoft 365 (Graph) accounts.
 
 ### Effect on deleting emails
 
@@ -87,8 +100,8 @@ earlier `RetainUntil` (end of the 10th year).
 
 Once a day the application deletes every email whose original has passed `RetainUntil`,
 together with its attachments and the original. Each run that deletes something writes an
-entry of type "Retention" to the access log. Emails without a stored original (imports,
-Microsoft 365, emails archived before this version) are never deleted automatically.
+entry of type "Retention" to the access log. Emails without a stored original (Microsoft
+365, emails archived before this version) are never deleted automatically.
 
 ### Pausing it (e.g. during a tax audit)
 

@@ -280,6 +280,9 @@ namespace MailArchiver.Services.Providers
                     using var memoryStream = new MemoryStream();
                     await entryStream.CopyToAsync(memoryStream, ct);
                     memoryStream.Position = 0;
+                    // The file exactly as imported, kept write-once as the original (also when
+                    // its headers had to be recovered for parsing below)
+                    var originalMime = memoryStream.ToArray();
 
                     MimeMessage? message;
                     try
@@ -320,7 +323,8 @@ namespace MailArchiver.Services.Providers
                     job.CurrentEmailSubject = message.Subject;
                     job.ProcessedBytes = memoryStream.Position;
 
-                    var importResult = await mailImporter.ImportEmailToDatabase(message, targetAccount, job.JobId, targetFolder);
+                    var importResult = await mailImporter.ImportEmailToDatabase(message, targetAccount, job.JobId, targetFolder,
+                        originalMime, ArchivedEmailSourceKinds.EmlImport);
                     message?.Dispose();
 
                     if (importResult.Success) job.SuccessCount++;

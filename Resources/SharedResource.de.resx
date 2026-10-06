@@ -3612,4 +3612,13 @@
   <data name="AuditorRoleExclusive" xml:space="preserve">
     <value>Ein Prüfer kann nicht gleichzeitig Admin sein oder die Selbstverwaltung haben.</value>
   </data>
+  <data name="LogVerification" xml:space="preserve">
+    <value>Protokollprüfung</value>
+  </data>
+  <data name="Log_AccessLogChainIntact" xml:space="preserve">
+    <value>Protokoll geprüft: unverändert, {0} Einträge. Prüfwert des letzten Eintrags: {1}</value>
+  </data>
+  <data name="Log_AccessLogChainBroken" xml:space="preserve">
+    <value>Protokoll geprüft: beschädigt ab Eintrag Nr. {0}. Die {1} Einträge davor sind unverändert; Prüfwert des letzten unveränderten Eintrags: {2}</value>
+  </data>
 </root>
