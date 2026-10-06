@@ -961,6 +961,8 @@ namespace MailArchiver.Services.Providers.Imap
                                 // Non-transient errors (malformed messages, UTF-8 issues, etc.) bubble
                                 // up immediately to the outer catch and are counted as FailedEmails.
                                 MimeKit.MimeMessage? message = null;
+                                // Bytes exactly as delivered by the server, stored write-once with a hash.
+                                byte[]? originalMime = null;
                                 var maxAttempts = TransientFetchRetryDelaysMs.Length + 1;
                                 var mboxRecoveryAttempted = false;
                                 var notFoundRecoveryAttempted = false;
@@ -969,7 +971,14 @@ namespace MailArchiver.Services.Providers.Imap
                                 {
                                     try
                                     {
-                                        message = await folder.GetMessageAsync(uid);
+                                        // Same FETCH as GetMessageAsync, but the raw bytes are kept
+                                        // before parsing so the original can be stored unchanged.
+                                        using var rawStream = await folder.GetStreamAsync(uid);
+                                        using var raw = new MemoryStream();
+                                        await rawStream.CopyToAsync(raw);
+                                        originalMime = raw.ToArray();
+                                        raw.Position = 0;
+                                        message = await MimeKit.MimeMessage.LoadAsync(raw);
                                         // Success - reset the consecutive throttling counter
                                         consecutiveTransientFailures = 0;
                                         break;
@@ -991,6 +1000,8 @@ namespace MailArchiver.Services.Providers.Imap
                                             using var rawStream = await folder.GetStreamAsync(uid, CancellationToken.None, null);
                                             using var buffered = new MemoryStream();
                                             await rawStream.CopyToAsync(buffered);
+                                            // The original is what the server sent, before recovery.
+                                            originalMime = buffered.ToArray();
                                             buffered.Position = 0;
                                             var recovery = await _mailCleaner.TryRecoverHeadersAsync(buffered);
                                             message = recovery.Message;
@@ -1028,8 +1039,9 @@ namespace MailArchiver.Services.Providers.Imap
                                             "Server reported UID {Uid} in folder {FolderName} as missing, attempting IMAP fallback fetch",
                                             uid, folder.FullName);
 
-                                        message = await ImapMessageRecovery.TryRecoverAsync(
+                                        (message, var recoveredRaw) = await ImapMessageRecovery.TryRecoverWithRawAsync(
                                             folder, uid, _logger, CancellationToken.None);
+                                        originalMime = recoveredRaw;
 
                                         if (message == null)
                                         {
@@ -1181,7 +1193,7 @@ namespace MailArchiver.Services.Providers.Imap
                                     }
                                 }
 
-                                var isNew = await _coreService.ArchiveEmailAsync(account, message, isOutgoing, folder.FullName);
+                                var isNew = await _coreService.ArchiveEmailAsync(account, message, isOutgoing, folder.FullName, originalMime);
                                 if (isNew)
                                 {
                                     result.NewEmails++;

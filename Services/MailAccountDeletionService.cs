@@ -1,5 +1,6 @@
 using MailArchiver.Data;
 using MailArchiver.Models;
+using MailArchiver.Services.Shared;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using System.Collections.Concurrent;
@@ -179,6 +180,22 @@ namespace MailArchiver.Services
                 _syncJobService.CancelJobsForAccount(job.MailAccountId);
                 _logger.LogInformation("Job {JobId}: Cancelled any running sync jobs for account {AccountId}",
                     job.JobId, job.MailAccountId);
+
+                // Refuse before anything is changed: the database will not delete emails
+                // whose original is still retained in archive_worm.
+                if (await RetainedSources.AccountHasRetainedAsync(context, job.MailAccountId, cancellationToken))
+                {
+                    throw new InvalidOperationException(
+                        "This account has emails whose originals are stored write-once and still within their retention period, so it cannot be deleted yet.");
+                }
+
+                var deletionPolicy = scope.ServiceProvider.GetRequiredService<IOptions<DeletionPolicyOptions>>().Value;
+                if (!deletionPolicy.DeletionAllowed
+                    && await context.ArchivedEmails.AnyAsync(e => e.MailAccountId == job.MailAccountId, cancellationToken))
+                {
+                    throw new InvalidOperationException(
+                        "Email deletion is disabled by policy, so an account that still has archived emails cannot be deleted.");
+                }
 
                 // Phase 2: Unlock all emails
                 job.CurrentPhase = "Unlocking emails";

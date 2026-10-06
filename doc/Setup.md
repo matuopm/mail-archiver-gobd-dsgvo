@@ -115,9 +115,6 @@ services:
       - CsvImport__MaxRows=5000
       - CsvImport__MaxFileSizeBytes=10000000
 
-      # Deletion Policy Settings (Optional - controls whether email deletion is allowed)
-      - DeletionPolicy__DeletionAllowed=true
-
       # TimeZone Settings
       - TimeZone__DisplayTimeZoneId=Etc/UCT
 
@@ -385,13 +382,18 @@ Settings for the audit data export page (admin only, reachable from the Logs pag
 - Every export writes a start entry and a result entry to the access log (type "Audit Data Export"), so the history is revision-safe without any DB schema change.
 
 ### 🔒 Deletion Policy Settings
-- `DeletionPolicy__DeletionAllowed`: Controls whether manual deletion of archived emails is allowed (true/false). Default is `true`. When set to `false`:
+- **Always on in this fork.** Manual deletion of archived emails is permanently disabled; `DeletionPolicy__DeletionAllowed` is ignored (the application forces it to `false`). That means:
   - All archived emails are locked (`IsLocked = true`) on startup via the database compliance trigger, preventing any modification or deletion at the database level.
-  - Manual deletion (single and bulk) is blocked on the application level with an error message.
+  - The UI has no buttons for deleting single or selected emails; requests that still reach the delete endpoints are refused with an error message.
   - The column default is adjusted so that newly imported emails are also locked.
   - The current policy state is logged to the AccessLogs table on every startup (visible on the Logs page as "Deletion Policy" entries) for auditability.
-  - Local retention deletion is exempt: emails that fall under a configured retention period are still deleted (they are unlocked immediately before deletion within the retention process).
+  - Deleting a mail account is refused while it still has archived emails. Disable the account instead to stop syncing.
+  - Local retention deletion is exempt: emails that fall under a configured retention period are still deleted (they are unlocked immediately before deletion within the retention process), except emails whose original is still retained in `archive_worm`.
+  - Deleting emails after their retention period has ended is not available yet; it will come with the retention periods per document type.
 - **Immutability protection:** When `IsLocked = true`, the database compliance trigger (`prevent_locked_email_changes`) blocks ANY modification to the email row — all columns are protected, not just a fixed field list. The only exempt columns are `IsLocked` itself (so that unlocking for retention deletion and startup policy application remains possible) and `FolderName` (so that IMAP sync can update the folder when an email is moved server-side). The protection is column-agnostic (JSONB-based comparison) and automatically covers future schema additions.
+
+### 🔏 Original Messages (always on)
+This fork always stores the original message bytes of every newly synced IMAP email write-once, with SHA-256, in the `archive_worm` schema; there is no setting to turn it off. Emails with a stored original cannot be deleted before their retention date (retention, manual and account deletion skip or refuse them). See [Write-Once Storage for Original Messages](WormStorage.md). If you do not need GoBD-style archiving, use the upstream Mail Archiver instead.
 
 ### 🕐 TimeZone Settings
 - `TimeZone__DisplayTimeZoneId`: The time zone used for displaying email timestamps in the UI. Uses IANA time zone identifiers (e.g., "Europe/Berlin", "Asia/Tokyo"). Default is "Etc/UCT" for backward compatibility. When importing emails timestamps will be converted to this time zone for display purposes.

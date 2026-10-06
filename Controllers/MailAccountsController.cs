@@ -1089,8 +1089,17 @@ namespace MailArchiver.Controllers
             // ViewBag für die E-Mail-Anzahl setzen
             ViewBag.EmailCount = emailCount;
 
+            // Emails with a retained original block the deletion; the view says so up front
+            var (retainedCount, retainedUntil) = await RetainedSources.AccountRetentionAsync(_context, id);
+            ViewBag.RetainedCount = retainedCount;
+            ViewBag.RetainedUntil = retainedUntil;
+            ViewBag.DeletionDisabled = emailCount > 0 && !DeletionAllowed();
+
             return View(model);
         }
+
+        private bool DeletionAllowed() =>
+            HttpContext.RequestServices.GetRequiredService<IOptions<DeletionPolicyOptions>>().Value.DeletionAllowed;
 
         // POST: MailAccounts/Delete/5
         [HttpPost, ActionName("Delete")]
@@ -1107,6 +1116,21 @@ namespace MailArchiver.Controllers
             if (account == null)
             {
                 return NotFound();
+            }
+
+            if (await RetainedSources.AccountHasRetainedAsync(_context, id))
+            {
+                _logger.LogWarning("Deletion of account {AccountId} refused: emails with retained originals", id);
+                TempData["ErrorMessage"] = _localizer["RetainedAccountCannotBeDeleted"].Value;
+                return RedirectToAction(nameof(Index));
+            }
+
+            // With the deletion lock on, deleting the account would delete its emails as well
+            if (!DeletionAllowed() && await _context.ArchivedEmails.AnyAsync(e => e.MailAccountId == id))
+            {
+                _logger.LogWarning("Deletion of account {AccountId} refused: deletion policy forbids deleting emails", id);
+                TempData["ErrorMessage"] = _localizer["AccountWithEmailsCannotBeDeleted"].Value;
+                return RedirectToAction(nameof(Index));
             }
 
             // Determine number of emails to delete

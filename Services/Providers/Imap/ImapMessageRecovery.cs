@@ -54,6 +54,17 @@ namespace MailArchiver.Services.Providers.Imap
             UniqueId uid,
             ILogger logger,
             CancellationToken cancellationToken = default)
+            => (await TryRecoverWithRawAsync(folder, uid, logger, cancellationToken)).Message;
+
+        /// <summary>
+        /// Same as <see cref="TryRecoverAsync"/>, but also returns the bytes exactly as the server
+        /// delivered them (null when nothing usable came back), for storing the original message.
+        /// </summary>
+        public static async Task<(MimeMessage? Message, byte[]? Raw)> TryRecoverWithRawAsync(
+            IMailFolder folder,
+            UniqueId uid,
+            ILogger logger,
+            CancellationToken cancellationToken = default)
         {
             // GetStreamsAsync is IMAP-specific. Every caller in the sync pipeline holds an
             // ImapFolder, but the parameter is IMailFolder, so this stays a check rather than a cast.
@@ -62,7 +73,7 @@ namespace MailArchiver.Services.Providers.Imap
                 logger.LogDebug(
                     "No IMAP fallback available for UID {Uid} in folder {FolderName}: not an IMAP folder",
                     uid, folder.FullName);
-                return null;
+                return (null, null);
             }
 
             using var buffer = new MemoryStream();
@@ -93,7 +104,7 @@ namespace MailArchiver.Services.Providers.Imap
                 logger.LogWarning(ex,
                     "IMAP fallback fetch failed for UID {Uid} in folder {FolderName}",
                     uid, folder.FullName);
-                return null;
+                return (null, null);
             }
 
             if (!received)
@@ -106,7 +117,7 @@ namespace MailArchiver.Services.Providers.Imap
                     "IMAP fallback fetch for UID {Uid} in folder {FolderName} completed without the server " +
                     "returning the message; it stays a failed email",
                     uid, folder.FullName);
-                return null;
+                return (null, null);
             }
 
             if (buffer.Length == 0)
@@ -115,7 +126,7 @@ namespace MailArchiver.Services.Providers.Imap
                     "IMAP fallback returned an empty stream for UID {Uid} in folder {FolderName}; " +
                     "it stays a failed email",
                     uid, folder.FullName);
-                return null;
+                return (null, null);
             }
 
             buffer.Position = 0;
@@ -129,7 +140,7 @@ namespace MailArchiver.Services.Providers.Imap
                     buffer.Length, uid, folder.FullName);
             }
 
-            return message;
+            return (message, message != null ? buffer.ToArray() : null);
         }
 
         /// <summary>

@@ -260,13 +260,6 @@
                                         <i class="bi bi-download"></i>
                                         <span class="d-inline">@Localizer["ExportSelected"]</span>
                                     </button>
-                                    @if (User.IsInRole("Admin") || User.IsInRole("SelfManager"))
-                                    {
-                                        <button type="button" id="deleteSelectedBtn" class="btn btn-sm btn-danger">
-                                            <i class="bi bi-trash"></i>
-                                            <span class="d-inline">@Localizer["DeleteSelected"]</span>
-                                        </button>
-                                    }
                                 </div>
                             </div>
                         </div>

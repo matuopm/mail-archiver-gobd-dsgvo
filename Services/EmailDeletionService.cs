@@ -1,5 +1,6 @@
 using MailArchiver.Data;
 using MailArchiver.Models;
+using MailArchiver.Services.Shared;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -172,6 +173,17 @@ namespace MailArchiver.Services
                 var combinedToken = CancellationTokenSource
                     .CreateLinkedTokenSource(stoppingToken, job.CancellationTokenSource.Token)
                     .Token;
+
+                // Emails whose original is still retained in archive_worm cannot be deleted;
+                // leave them out and report how many were kept.
+                var retainedIds = await RetainedSources.FilterRetainedAsync(context, job.EmailIds, combinedToken);
+                if (retainedIds.Count > 0)
+                {
+                    var retainedSet = retainedIds.ToHashSet();
+                    job.EmailIds = job.EmailIds.Where(id => !retainedSet.Contains(id)).ToList();
+                    job.ErrorMessage = $"{retainedIds.Count} email(s) were kept because their originals are still within the retention period.";
+                    _logger.LogInformation("Job {JobId}: Skipping {Count} emails with retained originals", job.JobId, retainedIds.Count);
+                }
 
                 // Phase 1: Count attachments
                 job.CurrentPhase = "Counting attachments";

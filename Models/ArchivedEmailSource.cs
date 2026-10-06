@@ -35,6 +35,8 @@ namespace MailArchiver.Models
 
         /// <summary>Where the bytes came from, one of <see cref="ArchivedEmailSourceKinds"/>.</summary>
         public string Source { get; set; } = ArchivedEmailSourceKinds.Imap;
+
+        public virtual ArchivedEmail ArchivedEmail { get; set; } = null!;
     }
 
     /// <summary>Allowed values for <see cref="ArchivedEmailSource.Source"/>.</summary>

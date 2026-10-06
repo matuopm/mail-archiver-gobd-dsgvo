@@ -17,8 +17,35 @@ For that, the original message bytes get their own table in a separate schema:
 | Working layer | `mail_archiver` | Parsed fields, folder, search data | Yes (locked rows only by the existing lock rules) |
 | Write-once layer | `archive_worm` | Original `.eml` bytes, SHA-256, capture time | No |
 
-> 🚧 **Status**: This is the storage foundation only. Nothing writes to the table yet;
-> capturing the original bytes during IMAP sync and import follows in a later change.
+## ⚙️ Capture
+
+Capture is always on in this fork; there is no setting to disable it. Whoever does not need
+GoBD-style archiving should use the upstream Mail Archiver.
+
+The IMAP sync fetches each new message as raw bytes, stores them unchanged in `archive_worm`
+together with their SHA-256 (in the same transaction as the email), and also writes the hash
+to `ArchivedEmails.ContentHash` / `HashCreatedAt`. Storage per email roughly doubles, because
+attachments are kept once in the parsed form and once inside the original.
+
+Not covered yet: emails archived before this version, EML/MBOX import and Microsoft 365
+(Graph) accounts.
+
+### Effect on deleting emails
+
+An email whose original is still within `RetainUntil` cannot be deleted. The application
+checks this up front instead of running into the database error:
+
+| Path | Behaviour |
+|---|---|
+| Local retention (`Local Retention Days`) | Such emails are skipped and kept; the rest is deleted as before |
+| Manual delete of a single email | Refused with an error message (in this fork manual deletion is disabled for every email anyway, see the deletion policy in [Setup](Setup.md#-deletion-policy-settings)) |
+| Bulk delete / delete job | Such emails are skipped; the job reports how many were kept |
+| Deleting a mail account | Refused while the account has such emails; nothing is changed. The delete page says so up front, with the count and the date the last original is retained until |
+
+A single retained original blocks deleting its whole account, including the emails of that
+account that have no stored original. The account can be disabled instead; it becomes
+deletable once the last of its originals has passed `RetainUntil`. Single emails without an
+original can still be deleted individually or in bulk.
 
 ## 🗄️ Table `archive_worm."ArchivedEmailSources"`
 

@@ -566,11 +566,13 @@ namespace MailArchiver.Migrations
 
             modelBuilder.Entity("MailArchiver.Models.ArchivedEmailSource", b =>
                 {
-                    b.HasOne("MailArchiver.Models.ArchivedEmail", null)
+                    b.HasOne("MailArchiver.Models.ArchivedEmail", "ArchivedEmail")
                         .WithOne()
                         .HasForeignKey("MailArchiver.Models.ArchivedEmailSource", "ArchivedEmailId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("ArchivedEmail");
                 });
 
             modelBuilder.Entity("MailArchiver.Models.EmailAttachment", b =>

@@ -6,6 +6,8 @@ namespace MailArchiver.Models
     /// emails is blocked on the application level and all archived emails are
     /// locked via the database compliance trigger (IsLocked = true) on startup.
     /// Local retention deletion is exempt and still runs.
+    /// In this fork Program.cs forces <see cref="DeletionAllowed"/> to false, so the
+    /// setting only matters for tests and code that builds the options directly.
     /// </summary>
     public class DeletionPolicyOptions
     {
