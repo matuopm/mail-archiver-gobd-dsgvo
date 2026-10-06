@@ -151,6 +151,7 @@ only read and add entries. The migration then sees the protected table and skips
 Triggers alone only protect against the application. Whoever owns a table can drop its
 triggers, and a PostgreSQL **superuser** bypasses every permission. In the default
 `docker-compose.yml` the application connects as `POSTGRES_USER`, which is a superuser.
+The template in [`deploy/`](../deploy/LIESMICH.md) sets up both parts below for a new installation.
 
 The hardening therefore has two parts:
 
