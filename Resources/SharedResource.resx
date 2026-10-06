@@ -3577,4 +3577,16 @@
   <data name="Log_DeletionRefusedAccountLocked" xml:space="preserve">
     <value>Refused deletion of mail account {0}: deletion is disabled and the account has archived emails</value>
   </data>
+  <data name="AccessLogVerify" xml:space="preserve">
+    <value>Check log</value>
+  </data>
+  <data name="AccessLogVerifyHint" xml:space="preserve">
+    <value>Checks the hash chain of all log entries. A changed, deleted or inserted entry breaks the chain.</value>
+  </data>
+  <data name="AccessLogChainIntact" xml:space="preserve">
+    <value>Log unchanged: {0} entries checked. Check value of the last entry: {1}</value>
+  </data>
+  <data name="AccessLogChainBroken" xml:space="preserve">
+    <value>Log damaged: entry no. {0} does not match the chain. {1} entries before it are intact; check value of the last intact entry: {2}</value>
+  </data>
 </root>

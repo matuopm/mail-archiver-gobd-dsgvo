@@ -93,6 +93,30 @@ namespace MailArchiver.Controllers
             return View(paginatedLogs);
         }
 
+        // POST: Logs/VerifyChain - checks the hash chain of the whole access log (admins only)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> VerifyChain()
+        {
+            if (!_authenticationService.IsCurrentUserAdmin(HttpContext))
+            {
+                return Forbid();
+            }
+
+            var result = await AccessLogIntegrity.VerifyAsync(_context);
+            if (result.IsIntact)
+            {
+                TempData["SuccessMessage"] = _localizer["AccessLogChainIntact", result.Checked,
+                    result.HeadHash ?? "-"].Value;
+            }
+            else
+            {
+                TempData["ErrorMessage"] = _localizer["AccessLogChainBroken", result.FirstBrokenSeq!,
+                    result.Checked, result.HeadHash ?? "-"].Value;
+            }
+            return RedirectToAction(nameof(Index));
+        }
+
         // GET: Logs/AuditExport
         [HttpGet]
         public async Task<IActionResult> AuditExport()

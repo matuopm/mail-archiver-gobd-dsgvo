@@ -258,7 +258,7 @@ namespace MailArchiver.Migrations
                     b.HasIndex("Username")
                         .HasDatabaseName("IX_AccessLogs_Username");
 
-                    b.ToTable("AccessLogs", "mail_archiver");
+                    b.ToTable("AccessLogs", "archive_worm");
                 });
 
             modelBuilder.Entity("MailArchiver.Models.EmailAttachment", b =>

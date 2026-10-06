@@ -128,10 +128,7 @@ public class AuditExportServiceLifecycleTests
             }
             cleanupContext.AuditExportJobs.Remove(row);
         }
-        var logRows = cleanupContext.AccessLogs
-            .Where(l => l.Type == AccessLogType.AuditExport && l.Username == "lifecycle-admin")
-            .ToList();
-        cleanupContext.AccessLogs.RemoveRange(logRows);
+        // Access log entries stay: the log is write-once (archive_worm)
         await cleanupContext.SaveChangesAsync();
     }
 

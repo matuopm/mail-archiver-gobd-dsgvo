@@ -999,7 +999,7 @@ using (var scope = app.Services.CreateScope())
         // missing tables, deletion lock not applied). Stop with a fixed exit code and a
         // one-line hint so the error is noticed in `docker compose logs`.
         Console.Error.WriteLine(
-            $"FATAL: Database initialization failed, the application stops (exit code 1): {ex.GetBaseException().Message.Split('\n')[0].Trim()}. " +
+            $"FATAL: Database initialization failed, the application stops (exit code 1): {ex.GetBaseException().Message.Split('\n')[0].Trim().TrimEnd('.')}. " +
             "Fix the database (for a hardened archive_worm see doc/WormStorage.md, upgrade section) and start again.");
         // Disposing the logger factory flushes the queued console log, including the entry above.
         services.GetService<ILoggerFactory>()?.Dispose();

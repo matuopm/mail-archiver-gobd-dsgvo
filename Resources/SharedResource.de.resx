@@ -3591,4 +3591,16 @@
   <data name="Log_DeletionRefusedAccountLocked" xml:space="preserve">
     <value>Löschen des E-Mail-Kontos {0} abgelehnt: Löschen ist gesperrt und das Konto enthält archivierte E-Mails</value>
   </data>
+  <data name="AccessLogVerify" xml:space="preserve">
+    <value>Protokoll prüfen</value>
+  </data>
+  <data name="AccessLogVerifyHint" xml:space="preserve">
+    <value>Prüft die Hash-Kette aller Protokolleinträge. Ein geänderter, gelöschter oder eingefügter Eintrag unterbricht die Kette.</value>
+  </data>
+  <data name="AccessLogChainIntact" xml:space="preserve">
+    <value>Protokoll unverändert: {0} Einträge geprüft. Prüfwert des letzten Eintrags: {1}</value>
+  </data>
+  <data name="AccessLogChainBroken" xml:space="preserve">
+    <value>Protokoll beschädigt: Eintrag Nr. {0} passt nicht zur Kette. Die {1} Einträge davor sind unverändert; Prüfwert des letzten unveränderten Eintrags: {2}</value>
+  </data>
 </root>
