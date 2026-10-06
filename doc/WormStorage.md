@@ -102,8 +102,11 @@ Policy"), and every pause stays listed on the page.
 ## ⬆️ Upgrading a hardened database to MigrateV2610_2
 
 `MigrateV2610_2` changes the period in `archive_worm.verify_source_insert()`. If
-`archive_worm` was hardened (see below), the application role may not change that function
-and the startup migration stops with a message pointing here. Run the script once as
+`archive_worm` was hardened (see below), the application role may not change that function.
+The application then does not start: it logs a critical error pointing here and exits, so
+with `restart: always` the container keeps restarting until the script has been run
+(`docker compose logs mailarchive-app` shows the message). Nothing is changed in the
+database in that case. Run the script once as
 database superuser, then start the new version:
 
 ```bash

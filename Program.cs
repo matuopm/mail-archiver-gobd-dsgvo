@@ -994,7 +994,10 @@ using (var scope = app.Services.CreateScope())
     catch (Exception ex)
     {
         var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "Ein Fehler ist bei der Datenbankinitialisierung aufgetreten");
+        logger.LogCritical(ex, "Ein Fehler ist bei der Datenbankinitialisierung aufgetreten");
+        // GoBD fork: never run on a half-initialized archive (old retention function,
+        // missing tables, deletion lock not applied). Stop so the error is noticed.
+        throw;
     }
 }
 
