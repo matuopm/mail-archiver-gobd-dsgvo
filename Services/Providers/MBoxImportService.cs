@@ -235,10 +235,11 @@ private readonly IServiceProvider _serviceProvider;
                 var mailImporter = scope.ServiceProvider.GetRequiredService<MailImporter>();
                 var streamProcessor = scope.ServiceProvider.GetRequiredService<MBoxStreamProcessor>();
 
-                await streamProcessor.ProcessMBoxFile(job, targetAccount, ct, async (message, folder) =>
+                await streamProcessor.ProcessMBoxFile(job, targetAccount, ct, async (message, folder, originalMime) =>
                 {
                     mailCleaner.PreCleanMessage(message);
-                    var result = await mailImporter.ImportEmailToDatabase(message, targetAccount, job.JobId, folder);
+                    var result = await mailImporter.ImportEmailToDatabase(message, targetAccount, job.JobId, folder,
+                        originalMime, ArchivedEmailSourceKinds.MboxImport);
 
                     // Progress & memory management (shared with EML pattern)
                     if (job.ProcessedEmails % 50 == 0)

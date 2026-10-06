@@ -3598,4 +3598,13 @@
   <data name="AuditorRoleExclusive" xml:space="preserve">
     <value>An auditor cannot also be admin or self-manager.</value>
   </data>
+  <data name="LogVerification" xml:space="preserve">
+    <value>Log check</value>
+  </data>
+  <data name="Log_AccessLogChainIntact" xml:space="preserve">
+    <value>Log checked: unchanged, {0} entries. Check value of the last entry: {1}</value>
+  </data>
+  <data name="Log_AccessLogChainBroken" xml:space="preserve">
+    <value>Log checked: damaged from entry no. {0}. {1} entries before it are intact; check value of the last intact entry: {2}</value>
+  </data>
 </root>

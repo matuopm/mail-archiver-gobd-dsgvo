@@ -1,37 +1,34 @@
-﻿@inject Microsoft.Extensions.Localization.IStringLocalizer<MailArchiver.SharedResource> Localizer
+@inject Microsoft.Extensions.Localization.IStringLocalizer<MailArchiver.SharedResource> Localizer
 @{
     ViewData["Title"] = Localizer["AccessDeniedTitle"];
-    Layout = "_LoginLayout";
 }
 
-<div class="login-container">
-    <div class="card login-card">
-        <div class="card-body text-center">
-            <div class="mb-4">
-                <i class="bi bi-shield-x display-3 text-danger"></i>
-                <h2 class="mt-3">@Localizer["AccessDeniedTitle"]</h2>
-                <p class="text-muted">@Localizer["AccessDeniedIntro"]</p>
+@* Shown to signed-in users, so it uses the regular layout (navigation, theme) *@
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card">
+                <div class="card-body text-center p-4">
+                    <i class="bi bi-shield-x display-4 text-danger"></i>
+                    <h1 class="h3 mt-3">@Localizer["AccessDeniedTitle"]</h1>
+                    <p class="text-muted">@Localizer["AccessDeniedIntro"]</p>
+                    <div class="alert alert-warning text-start">
+                        <p class="mb-1">@Localizer["AccessDeniedLoggedInInfo1"]</p>
+                        <p class="mb-0">@Localizer["AccessDeniedLoggedInInfo2"]</p>
+                    </div>
+                    <div class="d-flex flex-wrap justify-content-center gap-2">
+                        <a href="@Url.Action("Index", "Home")" class="btn btn-primary">
+                            <i class="bi bi-house-door me-2"></i>@Localizer["GoToDashboard"]
+                        </a>
+                        <form asp-controller="Auth" asp-action="Logout" method="post" class="mb-0">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-outline-secondary">
+                                <i class="bi bi-box-arrow-right me-2"></i>@Localizer["SignOut"]
+                            </button>
+                        </form>
+                    </div>
+                </div>
             </div>
-            <div class="alert alert-warning">
-                <p>@Localizer["AccessDeniedLoggedInInfo1"]</p>
-                <p>@Localizer["AccessDeniedLoggedInInfo2"]</p>
-            </div>
-            <div class="d-grid gap-2">
-                <a href="@Url.Action("Index", "Home")" class="btn btn-primary">
-                    <i class="bi bi-house-door me-2"></i>@Localizer["GoToDashboard"]
-                </a>
-                @using (Html.BeginForm("Logout", "Auth", FormMethod.Post))
-                {
-                    @Html.AntiForgeryToken()
-                    <button type="submit" class="btn btn-outline-secondary">
-                        <i class="bi bi-box-arrow-right me-2"></i>@Localizer["SignOut"]
-                    </button>
-                }
-            </div>
-        </div>
-        <div class="card-footer text-center text-muted">
-            <small>@DateTime.Now.Year - s1t5</small>
         </div>
     </div>
 </div>
-

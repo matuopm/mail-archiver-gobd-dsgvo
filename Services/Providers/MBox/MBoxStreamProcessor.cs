@@ -24,11 +24,33 @@ namespace MailArchiver.Services.Providers.MBox
         /// Processes an MBox file stream. For each email, calls the provided handler.
         /// Handles FormatException by skipping to the next mbox marker.
         /// </summary>
+        public Task ProcessMBoxFile(MBoxImportJob job, MailAccount targetAccount, CancellationToken ct,
+            Func<MimeMessage, string, Task<ImportResult>> handler) =>
+            ProcessMBoxFile(job, targetAccount, ct, (message, folder, _) => handler(message, folder));
+
+        /// <summary>
+        /// Like the overload above, but also hands the handler the message's original bytes as
+        /// they stand in the file: from the first header line to the end of the message, without
+        /// the "From " separator line and the blank line before the next message. These bytes
+        /// are stored write-once (archive_worm) as the original of the imported email.
+        /// </summary>
         public async Task ProcessMBoxFile(MBoxImportJob job, MailAccount targetAccount, CancellationToken ct,
-            Func<MimeMessage, string, Task<ImportResult>> handler)
+            Func<MimeMessage, string, byte[]?, Task<ImportResult>> handler)
         {
-            var stream = new FileStream(job.FilePath, FileMode.Open, FileAccess.Read);
+            var stream = new FileStream(job.FilePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+            // Second handle for reading the original bytes, so the parser's position is untouched
+            using var rawReader = new FileStream(job.FilePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+            long messageBegin = -1, messageEnd = -1;
+            void OnMessageEnd(object? sender, MimeMessageEndEventArgs e)
+            {
+                if (e.Parent == null) // the top-level message, not an attached message/rfc822
+                {
+                    messageBegin = e.BeginOffset;
+                    messageEnd = e.EndOffset;
+                }
+            }
             var parser = new MimeParser(stream, MimeFormat.Mbox);
+            parser.MimeMessageEnd += OnMessageEnd;
 
             try
             {
@@ -38,11 +60,13 @@ namespace MailArchiver.Services.Providers.MBox
 
                     try
                     {
+                        messageBegin = messageEnd = -1;
                         var message = await parser.ParseMessageAsync(ct);
                         job.CurrentEmailSubject = message.Subject;
                         job.ProcessedBytes = stream.Position;
 
-                        var importResult = await handler(message, job.TargetFolder);
+                        var original = await ReadRangeAsync(rawReader, messageBegin, messageEnd, ct);
+                        var importResult = await handler(message, job.TargetFolder, original);
                         message?.Dispose();
 
                         if (importResult.Success) job.SuccessCount++;
@@ -65,6 +89,7 @@ namespace MailArchiver.Services.Providers.MBox
                         {
                             stream.Position = nextEmailPosition;
                             parser = new MimeParser(stream, MimeFormat.Mbox);
+                            parser.MimeMessageEnd += OnMessageEnd;
                             _logger.LogInformation("Job {JobId}: Advanced stream from {OldPos} to {NewPos} ({BytesSkipped} bytes skipped) and recreated parser",
                                 job.JobId, currentPosition, nextEmailPosition, nextEmailPosition - currentPosition);
                         }
@@ -82,6 +107,20 @@ namespace MailArchiver.Services.Providers.MBox
                 parser = null;
                 stream?.Dispose();
             }
+        }
+
+        /// <summary>
+        /// Reads [begin, end) from the file, or returns null if the parser reported no range.
+        /// </summary>
+        private static async Task<byte[]?> ReadRangeAsync(FileStream reader, long begin, long end, CancellationToken ct)
+        {
+            if (begin < 0 || end <= begin)
+                return null;
+
+            var buffer = new byte[end - begin];
+            reader.Position = begin;
+            await reader.ReadExactlyAsync(buffer, ct);
+            return buffer;
         }
 
         /// <summary>

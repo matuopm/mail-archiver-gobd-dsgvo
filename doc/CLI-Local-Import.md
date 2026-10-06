@@ -11,6 +11,7 @@ The Mail Archiver supports importing MBox files and ZIP archives containing EML 
 - No browser timeout issues
 - Direct access to files on the Docker host or mounted volumes
 - Same deduplication and processing logic as web uploads
+- Every imported message is also stored unchanged as its original (write-once, with SHA-256 and the 8-year retention), see [Write-Once Storage](WormStorage.md#-capture)
 
 ## ⚠️ Security Model
 
