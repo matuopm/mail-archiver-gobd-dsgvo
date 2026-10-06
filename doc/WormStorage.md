@@ -103,7 +103,8 @@ Policy"), and every pause stays listed on the page.
 
 `MigrateV2610_2` changes the period in `archive_worm.verify_source_insert()`. If
 `archive_worm` was hardened (see below), the application role may not change that function.
-The application then does not start: it logs a critical error pointing here and exits, so
+The application then does not start: it logs a critical error and a line starting with
+`FATAL:`, and exits with code 1, so
 with `restart: always` the container keeps restarting until the script has been run
 (`docker compose logs mailarchive-app` shows the message). Nothing is changed in the
 database in that case. Run the script once as

@@ -996,8 +996,14 @@ using (var scope = app.Services.CreateScope())
         var logger = services.GetRequiredService<ILogger<Program>>();
         logger.LogCritical(ex, "Ein Fehler ist bei der Datenbankinitialisierung aufgetreten");
         // GoBD fork: never run on a half-initialized archive (old retention function,
-        // missing tables, deletion lock not applied). Stop so the error is noticed.
-        throw;
+        // missing tables, deletion lock not applied). Stop with a fixed exit code and a
+        // one-line hint so the error is noticed in `docker compose logs`.
+        Console.Error.WriteLine(
+            $"FATAL: Database initialization failed, the application stops (exit code 1): {ex.GetBaseException().Message.Split('\n')[0].Trim()}. " +
+            "Fix the database (for a hardened archive_worm see doc/WormStorage.md, upgrade section) and start again.");
+        // Disposing the logger factory flushes the queued console log, including the entry above.
+        services.GetService<ILoggerFactory>()?.Dispose();
+        Environment.Exit(1);
     }
 }
 
