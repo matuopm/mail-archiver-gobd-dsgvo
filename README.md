@@ -1,212 +1,83 @@
-# 📧 Mail-Archiver - Email Archiving System
+# 📧 Mail-Archiver GoBD
 
-**A comprehensive solution for archiving, searching, and exporting emails**
+**E-Mail-Archiv für Selbstständige und kleine Unternehmen, ausgelegt auf GoBD und DSGVO**
 
-🌐 **Website:** [mail-archiver.org](https://mail-archiver.org)
-🌐 **Roadmap:** [Project Portal](https://project.s1t5.dev/p/YzzZb6pdy8VIZZtrrERyXg)
+Dieser Fork von [Mail-Archiver](https://github.com/s1t5/mail-archiver) speichert jede E-Mail zusätzlich im Original mit SHA-256-Prüfsumme in einem unveränderbaren Speicher, bewahrt sie 8 Jahre auf und löscht sie danach automatisch. Manuelles Löschen gibt es nicht. Zugriffe werden in einem geschützten Protokoll festgehalten, und für Betriebsprüfungen gibt es eine eigene Rolle nur zum Lesen.
 
-<div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px;">
-  <a href="https://mail-archiver.org" target="_blank"><img src="https://img.shields.io/badge/Website-mail--archiver.org-4A90D9?style=for-the-badge&logo=globe&logoColor=white" alt="Website"></a>
-  <a href="#"><img src="https://img.shields.io/badge/Docker-2CA5E0?style=for-the-badge&logo=docker&logoColor=white" alt="Docker"></a>
-  <a href="#"><img src="https://img.shields.io/badge/.NET-512BD4?style=for-the-badge&logo=dotnet&logoColor=white" alt=".NET"></a>
-  <a href="#"><img src="https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL"></a>
-  <a href="#"><img src="https://img.shields.io/badge/Bootstrap-563D7C?style=for-the-badge&logo=bootstrap&logoColor=white" alt="Bootstrap"></a>
-  <a href="https://www.buymeacoffee.com/s1t5" target="_blank"><img src="https://img.shields.io/badge/Buy%20Me%20a%20Coffee-s1t5-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black" alt="Buy Me a Coffee"></a>
-  <a href="https://ko-fi.com/s1t5dev" target="_blank"><img src="https://img.shields.io/badge/Ko--Fi-s1t5dev-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white" alt="Ko-fi"></a>
-</div>
+Der Fork ist bewusst ein reiner GoBD-Modus ohne Schalter. Wer diese Einschränkungen nicht braucht, ist mit dem [Original-Projekt](https://github.com/s1t5/mail-archiver) besser bedient.
 
-![Mail-Archiver Dashboard](https://github.com/s1t5/mail-archiver/blob/main/Screenshots/dashboard.jpg?raw=true)
+![Mail-Archiver Dashboard](Screenshots/dashboard.jpg)
 
-## ✨ Key Features
+## 🔏 Was dieser Fork anders macht
 
-### 📌 Core Features
-- Automated archiving from multiple accounts with scheduled sync
-- Multilingual responsive UI with dark mode
-- OpenID Connect (OIDC) authentication ([OIDC Guide](doc/OIDC_Implementation.md))
+### Originale unveränderbar gespeichert
+- Jede E-Mail wird beim Abruf zusätzlich byte-genau als Original (`.eml`) mit SHA-256 gespeichert, in einem eigenen Datenbankschema `archive_worm`.
+- Die Datenbank selbst verhindert jede Änderung: Ändern und Leeren werden abgelehnt, Löschen erst nach Ablauf der Frist erlaubt, die Prüfsumme wird beim Speichern nachgerechnet.
+- Das gilt für den IMAP-Abruf und für den Import von EML- und MBOX-Dateien (Weboberfläche und Kommandozeile).
+- Optional lässt sich die Datenbank härten: Die Anwendung arbeitet dann mit einer eigenen Rolle, die im geschützten Speicher nur lesen und hinzufügen darf.
+- Details: [doc/WormStorage.md](doc/WormStorage.md)
 
-### 🔍 Search & Access
-- Advanced search with filters
-- Email preview with attachments
-- Export accounts or selected emails as mbox / zipped EML
+### Kein manuelles Löschen
+- Archivierte E-Mails lassen sich nicht von Hand löschen, weder einzeln noch gesammelt.
+- Ein Postfach mit archivierten E-Mails kann nicht gelöscht, nur deaktiviert werden.
 
-### 🔌 Programmatic & AI Agent Access
-- **Read-only REST API (v1)** for programmatic access to the archive via scoped per-user API keys — lets scripts read archived mail without ever exposing mailbox credentials ([REST API Guide](doc/API.md))
-- **MCP Server (Model Context Protocol)** — optional Streamable HTTP endpoint at `/mcp` that exposes the same read-only archive to AI agents as discoverable tools (`search_emails`, `get_email`, `list_accounts`, `list_folders`, `get_attachment`) ([MCP Guide](doc/MCP.md))
+### 8 Jahre Aufbewahrung mit automatischem Löschlauf
+- Einheitliche Frist für alle E-Mails: 8 Jahre ab Ende des Jahres, in dem die E-Mail archiviert wurde.
+- Ein täglicher Löschlauf entfernt E-Mails nach Ablauf der Frist samt Original und protokolliert das.
+- Auf der Seite **Aufbewahrung** können Administratoren das Löschen pausieren, etwa während einer Betriebsprüfung (§ 147 Abs. 3 AO). Beginn und Ende einer Pause werden protokolliert.
 
-### 👥 User Management
-- Multi-user support with account-specific permissions
-- Dashboard with statistics and storage monitoring
-- Detailed access logging ([Access Logging Guide](doc/Logs.md))
+### Geschütztes Zugriffsprotokoll
+- Das Protokoll kann nur ergänzt, nicht geändert oder gelöscht werden.
+- Jeder Eintrag ist per SHA-256-Kette mit dem vorherigen verbunden. Der Knopf **Protokoll prüfen** zeigt, ob die Kette lückenlos ist; auch die Prüfung selbst wird protokolliert.
+- Protokolltexte erscheinen in der gewählten Sprache (Deutsch und Englisch vollständig).
+- Details: [doc/Logs.md](doc/Logs.md)
 
-### 🧩 Email Provider Support
-- **IMAP**: Traditional IMAP accounts with full synchronization capabilities
-- **M365**: Microsoft 365 mail accounts via Microsoft Graph API ([Setup Guide](doc/AZURE_APP_REGISTRATION_M365.md))
-- **Microsoft Personal**: Personal Microsoft accounts (Outlook.com, Hotmail, live.com, M365 Family) via OAuth2 Device Code Flow — ships with a pre-registered shared Client ID so no Azure App Registration is required ([Setup Guide](doc/MSA_Outlook_Setup.md))
-- **IMPORT**: Import-only accounts for migrating existing email archives
+### Rolle „Prüfer (nur Lesen)“
+- Für Betriebsprüfer oder externe Prüfer: sieht alle Postfächer und das gesamte Protokoll, kann suchen, öffnen und exportieren.
+- Kann nichts ändern, löschen, wiederherstellen oder importieren. Der Server lehnt alles ab, was nicht ausdrücklich als lesend freigegeben ist.
+- Nicht mit Administrator kombinierbar.
+- Details: [doc/UserManagement.md](doc/UserManagement.md)
 
-### 🏢 M365 Tenant Import
+## ✨ Weitere Funktionen (aus dem Original)
 
-- Bulk-import all Microsoft 365 mailboxes of a tenant from one form
-- Import all mailboxes or select specific ones; skips existing and disabled accounts
-- See the [M365 Tenant Import Guide](doc/M365TenantImport.md) for details
+- Automatischer Abruf mehrerer Postfächer per IMAP, außerdem Microsoft 365 und private Microsoft-Konten
+- Suche mit Filtern, Vorschau mit Anhängen, Export als MBOX oder gezippte EML
+- Mehrere Benutzer mit Zuordnung zu Postfächern, Anmeldung auch per OpenID Connect
+- Datenträgerüberlassung (Z3) als Export mit `INDEX.XML` ([doc/AuditExport.md](doc/AuditExport.md))
+- Lesende REST-API und MCP-Server für Skripte und KI-Agenten ([doc/API.md](doc/API.md), [doc/MCP.md](doc/MCP.md))
+- Mehrsprachige Oberfläche mit Dunkelmodus
+- Wiederherstellen von E-Mails in ein Postfach und Löschen auf dem Mailserver nach einer einstellbaren Anzahl von Tagen (das Archiv bleibt davon unberührt)
 
-### 📥 Import & Restore Functions
-- MBox and EML (ZIP) import with folder structure support
-- Restore emails or entire mailboxes
-- **📤 Mailbox Migrations**: Copy emails between mailboxes while preserving folder structure ([Migration Guide](doc/MailboxMigration.md))
+Die übrige Dokumentation stammt größtenteils aus dem Original-Projekt und ist auf Englisch: [doc/Index.md](doc/Index.md).
 
-### 🗑️ Retention Policies
-- Automatic deletion from mailserver after a configurable period ([Retention Policies](doc/RetentionPolicies.md))
-- Per-account retention (e.g., 30, 90, or 365 days)
-- Separate retention for the local archive
+## 🚀 Installation
 
-### 🔒 Deletion Lock (Compliance)
-- Manual deletion of archived emails is permanently disabled in this fork (`DeletionPolicy__DeletionAllowed` is ignored); accounts with archived emails cannot be deleted
-- Local retention deletion remains exempt and still runs
-- See [Setup Guide](doc/Setup.md#-deletion-policy-settings) for details
+Für eine Neuinstallation gibt es eine Docker-Compose-Vorlage mit gehärteter Datenbank im Ordner [`deploy/`](deploy/LIESMICH.md). Die Anleitung dort führt durch Zugangsdaten, ersten Start, Härtung und Kontrolle. Das Image wird aus diesem Repository gebaut; ein fertiges Image dieses Forks gibt es nicht.
 
-### 📋 Access Log
-- The application logs various types of user activities such as Login, Opening, Searches, Exports and many more. ([Logging](doc/Logs.md))
+Wichtig:
+- Die Anwendung selbst bietet kein HTTPS. Davor gehört ein Reverse Proxy ([doc/ReverseProxy.md](doc/ReverseProxy.md)).
+- Härtung, Updates mit Skripten unter `doc/sql/` und alle Hintergründe zum geschützten Speicher: [doc/WormStorage.md](doc/WormStorage.md)
+- Alle Einstellungen: [doc/Setup.md](doc/Setup.md)
 
-For detailed documentation on installation, configuration, and usage, please refer to the [Documentation Index](doc/Index.md). Please note that the documentation is still fresh and is continuously being expanded.
+## ⚠️ Grenzen
 
-## 🚀 Quick Start
+- **Microsoft 365:** E-Mails aus Microsoft-365-Postfächern werden ohne Original gespeichert. Sie werden auch nicht automatisch gelöscht.
+- **Datensicherung:** Sicherung und Rücksicherung der gehärteten Datenbank sind nicht getestet. Vor dem Ernstfall einmal auf einem Testsystem durchspielen.
+- **Datenbank-Superuser:** Wer Superuser-Rechte auf der Datenbank hat, kann den Schutz umgehen. Die Protokollkette macht Änderungen am Protokoll sichtbar, verhindert sie aber nicht.
+- **Keine Rechtsberatung:** Die Software unterstützt eine GoBD-konforme Archivierung, ersetzt aber weder die eigene Verfahrensdokumentation noch die Abstimmung mit Steuerberatung oder Datenschutzbeauftragten.
 
-### Prerequisites
-- [Docker](https://www.docker.com/products/docker-desktop)
-- [Docker Compose](https://docs.docker.com/compose/install/)
+## 🙏 Herkunft und Dank
 
-### 🛠️ Installation
+Dieser Fork baut auf [Mail-Archiver](https://github.com/s1t5/mail-archiver) von **s1t5** auf. Fast alles, was die Anwendung kann, stammt von dort: Abruf, Suche, Oberfläche, Import, Export, API. Herzlichen Dank dafür!
 
-1. Install the prerequisites on your system
-
-2. Create a `docker-compose.yml` file 
-```yaml
-services:
-  mailarchive-app:
-    image: s1t5/mailarchiver:latest
-    restart: always
-    environment:
-      # Database Connection
-      - ConnectionStrings__DefaultConnection=Host=postgres;Database=MailArchiver;Username=mailuser;Password=masterkey;
-
-      # Authentication Settings
-      - Authentication__Username=admin
-      - Authentication__Password=secure123!
-
-      # TimeZone Settings
-      - TimeZone__DisplayTimeZoneId=Etc/UCT
-    ports:
-      - "5000:5000"
-    networks:
-      - postgres
-    volumes:
-      - ./data-protection-keys:/app/DataProtection-Keys
-    depends_on:
-      postgres:
-        condition: service_healthy
-
-
-  postgres:
-    image: postgres:17-alpine
-    restart: always
-    environment:
-      POSTGRES_DB: MailArchiver
-      POSTGRES_USER: mailuser
-      POSTGRES_PASSWORD: masterkey
-    volumes:
-      - ./postgres-data:/var/lib/postgresql/data
-    networks:
-      - postgres
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U mailuser -d MailArchiver"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
-
-networks:
-  postgres:
-```
-
-3. Edit the database configuration in the `docker-compose.yml` and set a secure password in the `POSTGRES_PASSWORD` variable and the `ConnectionString`.
-
-4. Definie a `Authentication__Username` and `Authentication__Password` which is used for the admin user.
-
-5. Adjust the `TimeZone__DisplayTimeZoneId` environment variable to match your preferred timezone (default is "Etc/UCT"). You can use any IANA timezone identifier (e.g., "Europe/Berlin", "Asia/Tokyo").
-
-6. Configure a reverse proxy of your choice with https to secure access to the application. 
-
-> ⚠️ **Attention**
-> The application itself does not provide encrypted access via https! It must be set up via a reverse proxy!
-
-7. Initial start of the containers:
-```bash
-docker compose up -d
-```
-
-8. Restart containers:
-```bash
-docker compose restart
-```
-
-9. Access the application in your prefered browser.
-
-10. Login with your defined credentials and add your first email account:
-- Navigate to "Email Accounts" section
-- Click "New Account"
-- Enter your server details and credentials
-- Save and start archiving!
-- If you want, create other users and assign accounts.
-
-## 🔐 Security Notes
-- Use strong passwords and change default credentials
-- Set up HTTPS via a reverse proxy in production (the app itself does not provide HTTPS)
-- Regular backups of the PostgreSQL database recommended (see [Backup & Restore Guide](doc/BackupRestore.md))
-
-For all configuration options, see the [Setup Guide](doc/Setup.md).
-
-## 🤝 Contributing
-
-We welcome contributions from the community! Please read our [Contributing Guide](CONTRIBUTING.md) for detailed information about how to contribute to Mail Archiver.
-
-For code changes by third parties, please coordinate with us via email at mail@s1t5.dev before making any changes.
-
-You can also:
-- Open an Issue for bug reports or feature requests
-- Submit a Pull Request for improvements
-- Help improve documentation
-
-## 💖 Support the Project
-If you find this project useful and would like to support its continued development, you can buy me a coffee! Your support helps me dedicate more time and resources to improving the application and adding new features. While financial support is not required, it is greatly appreciated and helps ensure the project's ongoing maintenance and enhancement.
+Wer das Original-Projekt unterstützen möchte:
 
 <a href="https://www.buymeacoffee.com/s1t5" target="_blank"><img src="https://img.shields.io/badge/Buy%20Me%20a%20Coffee-s1t5-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black" alt="Buy Me a Coffee"></a>
 <a href="https://ko-fi.com/s1t5dev" target="_blank"><img src="https://img.shields.io/badge/Ko--Fi-s1t5dev-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white" alt="Ko-fi"></a>
 <a href="https://github.com/sponsors/s1t5" target="_blank"><img src="https://img.shields.io/badge/GitHub%20Sponsors-s1t5-FF9A00?style=for-the-badge&logo=github-sponsors&logoColor=white" alt="GitHub Sponsors"></a>
 
-## 🌟 Project Sponsors
+Fehler und Wünsche zu den GoBD-Funktionen bitte als Issue in diesem Repository melden, nicht im Original-Projekt.
 
-With the generous support of our sponsors, Mail Archiver continues to evolve. Thank you for making it possible!
+## 📄 Lizenz
 
-*Disclaimer: The services listed above are third-party offerings and are neither affiliated with, endorsed by, nor tested by the Mail Archiver project.*
-
-<table>
-<tbody>
-<tr>
-<td align="center">
-<a href="https://www.admin-intelligence.de/" target="_blank">
-<img width="210" src="https://github.com/user-attachments/assets/f0a8f1fc-e5a5-4900-95c5-809a18b5b719" alt="Admin Intelligence">
-</a>
-</td>
-</tr>
-</tbody>
-</table>
-
-
-### 💝 Individual Sponsors
-
-A special thanks to all individual sponsors who support this project through [GitHub Sponsors](https://github.com/sponsors/s1t5), [Ko-fi](https://ko-fi.com/s1t5dev), and [Buy Me a Coffee](https://www.buymeacoffee.com/s1t5). Your contributions make a real difference!
-
----
-
-📄 *License: GNU GENERAL PUBLIC LICENSE Version 3 (see LICENSE file)*
+GNU General Public License Version 3 (GPLv3), wie das Original-Projekt. Den vollständigen Text enthält die Datei [LICENSE](LICENSE).
