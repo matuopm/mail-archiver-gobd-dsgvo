@@ -3553,4 +3553,28 @@
   <data name="RetentionPausedTitle" xml:space="preserve">
     <value>Automatic deletion is paused</value>
   </data>
+  <data name="Log_DeletionLockPermanent" xml:space="preserve">
+    <value>Email deletion is permanently disabled in this archive (GoBD). Archived emails are locked; they are deleted only automatically after their retention period.</value>
+  </data>
+  <data name="Log_RetentionPaused" xml:space="preserve">
+    <value>Automatic deletion paused: {0}</value>
+  </data>
+  <data name="Log_RetentionResumed" xml:space="preserve">
+    <value>Automatic deletion resumed</value>
+  </data>
+  <data name="Log_RetentionAutoDeleted" xml:space="preserve">
+    <value>Retention (automatic): deleted {0} emails whose retention period has ended</value>
+  </data>
+  <data name="Log_DeletionRefusedEmail" xml:space="preserve">
+    <value>Refused deletion of email {0}: deletion is disabled</value>
+  </data>
+  <data name="Log_DeletionRefusedSelected" xml:space="preserve">
+    <value>Refused deletion of {0} selected emails: deletion is disabled</value>
+  </data>
+  <data name="Log_DeletionRefusedAccountRetained" xml:space="preserve">
+    <value>Refused deletion of mail account {0}: it has emails whose originals are still retained</value>
+  </data>
+  <data name="Log_DeletionRefusedAccountLocked" xml:space="preserve">
+    <value>Refused deletion of mail account {0}: deletion is disabled and the account has archived emails</value>
+  </data>
 </root>

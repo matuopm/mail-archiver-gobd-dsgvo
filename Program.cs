@@ -1047,7 +1047,7 @@ static async Task ApplyDeletionPolicyAsync(MailArchiverDbContext context, Deleti
             Timestamp = DateTime.UtcNow,
             SearchParameters = deletionAllowed
                 ? "Email deletion is enabled by configuration (DeletionPolicy:DeletionAllowed=true). Archived emails are unlocked."
-                : "Email deletion is permanently disabled in this archive (GoBD). Archived emails are locked; they are deleted only automatically after their retention period."
+                : MailArchiver.Services.Shared.LogText.Event("DeletionLockPermanent")
         };
 
         context.AccessLogs.Add(logEntry);

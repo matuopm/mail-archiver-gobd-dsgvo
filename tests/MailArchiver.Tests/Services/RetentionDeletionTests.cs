@@ -108,7 +108,7 @@ public class RetentionDeletionTests
         Assert.True(await ctx.ArchivedEmails.AnyAsync(e => e.Id == retained.Id));
         Assert.True(await ctx.ArchivedEmails.AnyAsync(e => e.Id == withoutOriginal.Id));
         Assert.True(await ctx.AccessLogs.AnyAsync(l =>
-            l.Type == AccessLogType.Retention && l.SearchParameters!.StartsWith("Retention (automatic)")));
+            l.Type == AccessLogType.Retention && l.SearchParameters!.StartsWith("@log:RetentionAutoDeleted")));
 
         await scope.RollbackAsync();
     }

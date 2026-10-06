@@ -2884,7 +2884,7 @@ namespace MailArchiver.Controllers
             if (!_deletionPolicy.DeletionAllowed)
             {
                 _logger.LogWarning("Email deletion blocked by policy (DeletionPolicy:DeletionAllowed=false). Email ID: {EmailId}", id);
-                await LogRefusedDeletionAsync($"Refused deletion of email {id}: deletion is disabled", id);
+                await LogRefusedDeletionAsync(LogText.Event("DeletionRefusedEmail", id), id);
                 TempData["ErrorMessage"] = _localizer?["DeletionDisabledMessage"] ?? "Email deletion is disabled by configuration.";
                 return Redirect(returnUrl ?? Url.Action("Index"));
             }
@@ -2975,7 +2975,7 @@ namespace MailArchiver.Controllers
             if (!_deletionPolicy.DeletionAllowed)
             {
                 _logger.LogWarning("Bulk email deletion blocked by policy (DeletionPolicy:DeletionAllowed=false). Requested count: {Count}", ids.Count);
-                await LogRefusedDeletionAsync($"Refused deletion of {ids.Count} selected emails: deletion is disabled");
+                await LogRefusedDeletionAsync(LogText.Event("DeletionRefusedSelected", ids.Count));
                 TempData["ErrorMessage"] = _localizer?["DeletionDisabledMessage"] ?? "Email deletion is disabled by configuration.";
                 return Redirect(returnUrl ?? Url.Action("Index"));
             }

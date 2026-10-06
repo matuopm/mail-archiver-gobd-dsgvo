@@ -3567,4 +3567,28 @@
   <data name="RetentionPausedTitle" xml:space="preserve">
     <value>Automatische Löschung ist angehalten</value>
   </data>
+  <data name="Log_DeletionLockPermanent" xml:space="preserve">
+    <value>Das Löschen von E-Mails ist in diesem Archiv dauerhaft gesperrt (GoBD). Archivierte E-Mails sind gesperrt und werden nur automatisch nach Ablauf ihrer Aufbewahrungsfrist gelöscht.</value>
+  </data>
+  <data name="Log_RetentionPaused" xml:space="preserve">
+    <value>Automatische Löschung angehalten: {0}</value>
+  </data>
+  <data name="Log_RetentionResumed" xml:space="preserve">
+    <value>Automatische Löschung fortgesetzt</value>
+  </data>
+  <data name="Log_RetentionAutoDeleted" xml:space="preserve">
+    <value>Aufbewahrung (automatisch): {0} E-Mails nach Ablauf der Aufbewahrungsfrist gelöscht</value>
+  </data>
+  <data name="Log_DeletionRefusedEmail" xml:space="preserve">
+    <value>Löschen der E-Mail {0} abgelehnt: Löschen ist gesperrt</value>
+  </data>
+  <data name="Log_DeletionRefusedSelected" xml:space="preserve">
+    <value>Löschen von {0} ausgewählten E-Mails abgelehnt: Löschen ist gesperrt</value>
+  </data>
+  <data name="Log_DeletionRefusedAccountRetained" xml:space="preserve">
+    <value>Löschen des E-Mail-Kontos {0} abgelehnt: Es enthält E-Mails, deren Originale noch aufbewahrt werden</value>
+  </data>
+  <data name="Log_DeletionRefusedAccountLocked" xml:space="preserve">
+    <value>Löschen des E-Mail-Kontos {0} abgelehnt: Löschen ist gesperrt und das Konto enthält archivierte E-Mails</value>
+  </data>
 </root>

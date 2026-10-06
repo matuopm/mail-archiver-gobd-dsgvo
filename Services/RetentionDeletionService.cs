@@ -1,5 +1,6 @@
 using MailArchiver.Data;
 using MailArchiver.Models;
+using MailArchiver.Services.Shared;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
@@ -125,7 +126,7 @@ namespace MailArchiver.Services
                     Username = "System",
                     Type = AccessLogType.Retention,
                     Timestamp = DateTime.UtcNow,
-                    SearchParameters = $"Retention (automatic): Deleted {deleted} emails whose retention period has ended"
+                    SearchParameters = LogText.Event("RetentionAutoDeleted", deleted)
                 });
                 await context.SaveChangesAsync(cancellationToken);
             }

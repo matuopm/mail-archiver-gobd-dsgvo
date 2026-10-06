@@ -2,6 +2,7 @@ using MailArchiver.Attributes;
 using MailArchiver.Data;
 using MailArchiver.Models;
 using MailArchiver.Services;
+using MailArchiver.Services.Shared;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
@@ -71,7 +72,7 @@ namespace MailArchiver.Controllers
             });
             await _context.SaveChangesAsync();
             await _accessLogService.LogAccessAsync(username, AccessLogType.DeletionPolicy,
-                searchParameters: $"Automatic deletion paused: {reason.Trim()}");
+                searchParameters: LogText.Event("RetentionPaused", reason.Trim()));
             _logger.LogInformation("Automatic deletion paused by {User}: {Reason}", username, reason.Trim());
 
             TempData["SuccessMessage"] = _localizer["RetentionPaused"].Value;
@@ -96,7 +97,7 @@ namespace MailArchiver.Controllers
             }
             await _context.SaveChangesAsync();
             await _accessLogService.LogAccessAsync(username, AccessLogType.DeletionPolicy,
-                searchParameters: "Automatic deletion resumed");
+                searchParameters: LogText.Event("RetentionResumed"));
             _logger.LogInformation("Automatic deletion resumed by {User}", username);
 
             TempData["SuccessMessage"] = _localizer["RetentionResumed"].Value;
