@@ -6,8 +6,10 @@ using System.Text.Json;
 using System.Xml;
 using MailArchiver.Data;
 using MailArchiver.Models;
+using MailArchiver.Services.Shared;
 using MailArchiver.Utilities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Options;
 
 namespace MailArchiver.Services
@@ -23,9 +25,14 @@ namespace MailArchiver.Services
     {
         private const string EmailCsvName = "emails.csv";
         private const string AttachmentCsvName = "attachments.csv";
+        private const string AccessLogCsvName = "accesslog.csv";
         private const string IndexXmlName = "INDEX.XML";
         private const string DtdName = "index.dtd";
         private const int BatchSize = 1000;
+
+        // The access log table is written in one fixed language, whatever the UI language of
+        // whoever starts the export: the package goes to a German tax audit.
+        private static readonly CultureInfo AccessLogCulture = CultureInfo.GetCultureInfo("de");
 
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<AuditExportService> _logger;
@@ -338,6 +345,8 @@ namespace MailArchiver.Services
                     {
                         await WriteAttachmentsCsvAsync(job, context, archive, cancellation.Token);
                     }
+                    var localizer = jobScope.ServiceProvider.GetService<IStringLocalizerFactory>()?.Create(typeof(SharedResource));
+                    await WriteAccessLogCsvAsync(job, context, dateTimeHelper, localizer, archive, cancellation.Token);
                     await WriteIndexXmlAsync(job, archive);
 
                     job.Status = AuditExportJobStatus.Completed;
@@ -624,6 +633,78 @@ namespace MailArchiver.Services
             }
         }
 
+        private sealed record AccessLogRow(
+            long ChainSeq, DateTime Timestamp, string Username, int Type, int? EmailId, string? EmailSubject,
+            string? EmailFrom, string? SearchParameters, int? MailAccountId, string? PrevHash, string Hash);
+
+        /// <summary>
+        /// Access log entries of the export period, in chain order with their hash chain, so
+        /// the auditor can recompute it. With a mailbox filter only the entries of that
+        /// mailbox are included (the chain then has gaps). Type and event texts are German.
+        /// </summary>
+        private async Task WriteAccessLogCsvAsync(AuditExportJob job, MailArchiverDbContext context, DateTimeHelper dateTimeHelper,
+            IStringLocalizer? localizer, ZipArchive archive, CancellationToken cancellationToken)
+        {
+            var entry = archive.CreateEntry(AccessLogCsvName, CompressionLevel.Optimal);
+            await using var entryStream = entry.Open();
+            using var writer = new StreamWriter(entryStream, new UTF8Encoding(false));
+
+            var fromUtc = DateTime.SpecifyKind(dateTimeHelper.ConvertFromDisplayTimeZoneToUtc(job.FromDate), DateTimeKind.Utc);
+            var toUtc = DateTime.SpecifyKind(dateTimeHelper.ConvertFromDisplayTimeZoneToUtc(job.ToDate), DateTimeKind.Utc);
+
+            var previousCulture = CultureInfo.CurrentUICulture;
+            CultureInfo.CurrentUICulture = AccessLogCulture;
+            try
+            {
+                long lastSeq = 0;
+                while (true)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+
+                    var batch = await context.Database.SqlQueryRaw<AccessLogRow>(
+                            "SELECT l.\"ChainSeq\", l.\"Timestamp\", l.\"Username\", l.\"Type\", l.\"EmailId\", " +
+                            "l.\"EmailSubject\", l.\"EmailFrom\", l.\"SearchParameters\", l.\"MailAccountId\", " +
+                            "trim(l.\"PrevHash\") AS \"PrevHash\", trim(l.\"Hash\") AS \"Hash\" " +
+                            "FROM archive_worm.\"AccessLogs\" l " +
+                            "WHERE l.\"ChainSeq\" > {0} AND l.\"Timestamp\" >= {1} AND l.\"Timestamp\" <= {2} " +
+                            "AND ({3}::integer IS NULL OR l.\"MailAccountId\" = {3} OR EXISTS (" +
+                            "SELECT 1 FROM mail_archiver.\"ArchivedEmails\" e WHERE e.\"Id\" = l.\"EmailId\" AND e.\"MailAccountId\" = {3})) " +
+                            "ORDER BY l.\"ChainSeq\" LIMIT {4}",
+                            lastSeq, fromUtc, toUtc, (object?)job.MailAccountId ?? DBNull.Value, BatchSize)
+                        .ToListAsync(cancellationToken);
+
+                    if (batch.Count == 0)
+                    {
+                        break;
+                    }
+
+                    foreach (var row in batch)
+                    {
+                        var type = ((AccessLogType)row.Type).ToString();
+                        var line = string.Join(';',
+                            Csv(row.ChainSeq.ToString(CultureInfo.InvariantCulture)),
+                            Csv(DateTime.SpecifyKind(row.Timestamp, DateTimeKind.Utc).ToString("yyyy-MM-ddTHH:mm:ssZ", CultureInfo.InvariantCulture)),
+                            Csv(row.Username),
+                            Csv(localizer?[type].Value ?? type),
+                            Csv(row.EmailId?.ToString(CultureInfo.InvariantCulture) ?? string.Empty),
+                            Csv(row.EmailSubject ?? string.Empty),
+                            Csv(row.EmailFrom ?? string.Empty),
+                            Csv((localizer != null ? LogText.Display(row.SearchParameters, localizer) : row.SearchParameters) ?? string.Empty),
+                            Csv(row.MailAccountId?.ToString(CultureInfo.InvariantCulture) ?? string.Empty),
+                            Csv(row.PrevHash ?? string.Empty),
+                            Csv(row.Hash));
+                        await writer.WriteAsync(line);
+                        await writer.WriteAsync('\n');
+                        lastSeq = row.ChainSeq;
+                    }
+                }
+            }
+            finally
+            {
+                CultureInfo.CurrentUICulture = previousCulture;
+            }
+        }
+
         private async Task WriteIndexXmlAsync(AuditExportJob job, ZipArchive archive)
         {
             var entry = archive.CreateEntry(IndexXmlName, CompressionLevel.Optimal);
@@ -661,6 +742,8 @@ namespace MailArchiver.Services
             {
                 WriteTable(writer, AttachmentCsvName, "Anhang-Metadaten", "Metadaten archivierter E-Mail-Anhänge", AttachmentCsvColumns);
             }
+            WriteTable(writer, AccessLogCsvName, "Zugriffsprotokoll",
+                "Einträge des Zugriffsprotokolls im Zeitraum mit SHA-256-Verkettung (PrevHash, Hash), Texte auf Deutsch", AccessLogCsvColumns);
 
             writer.WriteEndElement(); // Media
             writer.WriteEndElement(); // DataSet
@@ -692,6 +775,21 @@ namespace MailArchiver.Services
             ("ContentType", "AlphaNumeric"),
             ("Size", "Numeric"),
             ("Sha256", "AlphaNumeric")
+        };
+
+        private static readonly (string Name, string Type)[] AccessLogCsvColumns =
+        {
+            ("ChainSeq", "Numeric"),
+            ("Timestamp", "AlphaNumeric"),
+            ("Username", "AlphaNumeric"),
+            ("Type", "AlphaNumeric"),
+            ("EmailId", "AlphaNumeric"),
+            ("EmailSubject", "AlphaNumeric"),
+            ("EmailFrom", "AlphaNumeric"),
+            ("Details", "AlphaNumeric"),
+            ("MailAccountId", "AlphaNumeric"),
+            ("PrevHash", "AlphaNumeric"),
+            ("Hash", "AlphaNumeric")
         };
 
         private static void WriteTable(XmlWriter writer, string url, string name, string description, (string Name, string Type)[] columns)

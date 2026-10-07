@@ -37,11 +37,16 @@ public class AuditExportServiceIntegrationTests
     {
         var logs = new List<string>();
         var services = new ServiceCollection();
-        // Scoped DbContexts on the shared connection; the test cleans up its rows afterwards
+        // Scoped DbContexts, each with its own connection: the restart recovery and the job
+        // run concurrently, and one shared connection cannot serve both. The test cleans up
+        // its rows afterwards.
+        var connectionString = sharedContext.Database.GetConnectionString();
         services.AddDbContext<MailArchiverDbContext>(options => options
-            .UseNpgsql(sharedContext.Database.GetDbConnection())
+            .UseNpgsql(connectionString)
             .ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning)));
         services.AddScoped<IAccessLogService, AccessLogService>();
+        services.AddLogging();
+        services.AddLocalization(options => options.ResourcesPath = "Resources");
         services.AddSingleton<IOptions<TimeZoneOptions>>(_ =>
             Options.Create(new TimeZoneOptions { DisplayTimeZoneId = "Etc/UCT" }));
         var provider = services.BuildServiceProvider();
@@ -127,6 +132,21 @@ public class AuditExportServiceIntegrationTests
                     FolderName = "INBOX", IsOutgoing = false
                 });
             await seedContext.SaveChangesAsync();
+
+            var opened = seedContext.ArchivedEmails.Single(e => e.MailAccountId == account.Id && e.MessageId == "<a2@test.local>");
+            seedContext.AccessLogs.AddRange(
+                new AccessLog
+                {
+                    Username = "api-reader", Type = AccessLogType.Open, Timestamp = DateTime.UtcNow,
+                    EmailId = opened.Id, EmailSubject = opened.Subject,
+                    SearchParameters = MailArchiver.Services.Shared.LogText.Event("ApiAccess")
+                },
+                new AccessLog
+                {
+                    Username = "other-mailbox-user", Type = AccessLogType.Open, Timestamp = DateTime.UtcNow,
+                    MailAccountId = account.Id + 100000
+                });
+            await seedContext.SaveChangesAsync();
         }
 
         Guid jobId = Guid.Empty;
@@ -168,6 +188,7 @@ public class AuditExportServiceIntegrationTests
             Assert.Contains("INDEX.XML", entryNames);
             Assert.Contains("emails.csv", entryNames);
             Assert.Contains("index.dtd", entryNames);
+            Assert.Contains("accesslog.csv", entryNames);
 
             // CSV content: 2 rows, filtered period, quoted special characters, no header row
             var csvEntry = archive.GetEntry("emails.csv")!;
@@ -179,6 +200,21 @@ public class AuditExportServiceIntegrationTests
             Assert.Contains("\"Betreff mit; Semikolon und \"\"Anführungszeichen\"\"\"", csv);
             Assert.Contains("Umlaute: Grüße aus München", csv);
             Assert.DoesNotContain("Außerhalb des Zeitraums", csv);
+
+            // Access log table: only this mailbox's entries, German texts, with the hash chain
+            using (var logReader = new StreamReader(archive.GetEntry("accesslog.csv")!.Open(), new UTF8Encoding(false)))
+            {
+                var logCsv = await logReader.ReadToEndAsync();
+                var logLines = logCsv.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+                var apiLine = Assert.Single(logLines, l => l.Contains("api-reader"));
+                Assert.Contains("Über REST-API", apiLine);
+                Assert.Matches(";[0-9a-f]{64};[0-9a-f]{64}$", apiLine);
+                Assert.DoesNotContain("other-mailbox-user", logCsv);
+            }
+            using (var indexReader = new StreamReader(archive.GetEntry("INDEX.XML")!.Open(), new UTF8Encoding(false)))
+            {
+                Assert.Contains("<URL>accesslog.csv</URL>", await indexReader.ReadToEndAsync());
+            }
 
             // Access log completion entry written
             using var logContext = _fixture.CreateContext();

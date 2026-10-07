@@ -26,6 +26,7 @@ The generated ZIP file is named `audit-export-<timestamp>.zip` and contains:
 | `index.dtd` | The DTD the index file references; required by importing tools for validation |
 | `emails.csv` | One row per archived email in the selected period/mailbox |
 | `attachments.csv` | Optional; one row per attachment of the exported emails |
+| `accesslog.csv` | Always; the access log entries of the selected period |
 
 ### Table `emails.csv`
 
@@ -57,6 +58,33 @@ Columns (no header row; the column names come from `INDEX.XML`, as usual for thi
 | ContentType | MIME type |
 | Size | Size in bytes (numeric) |
 | Sha256 | SHA-256 hash of the content (from the content-addressed attachment storage) |
+
+### Table `accesslog.csv`
+
+The access log entries whose time lies in the selected period, in chain order. Type and
+event texts are always German, whatever the language of the user who starts the export.
+With a mailbox selected, only entries of that mailbox are included (entries naming the
+mailbox or an email of it); the chain then has gaps. Without a mailbox, the table holds
+every entry of the period without gaps: each `PrevHash` equals the `Hash` of the row
+before it. The hashes are computed over the stored raw values (internal ID, exact time,
+untranslated event key), not over the German texts in this table, so recomputing a `Hash`
+itself needs the database: **Check log** on the Logs page
+([Logs](Logs.md#checking-the-log)) confirms that the chain the table was taken from is
+intact.
+
+| Column | Description |
+|---|---|
+| ChainSeq | Position in the hash chain (numeric) |
+| Timestamp | Time of the access, ISO 8601 UTC |
+| Username | User (or owner of the API key) |
+| Type | Kind of access, German (e.g. "Öffnen", "Suche") |
+| EmailId | Email the entry refers to, if any |
+| EmailSubject | Subject of that email |
+| EmailFrom | Sender of that email |
+| Details | Search parameters or event text, German for entries written since the fork's log texts; older entries keep their English text |
+| MailAccountId | Mailbox the entry refers to, if any |
+| PrevHash | Hash of the previous entry in the chain |
+| Hash | SHA-256 of this entry |
 
 ### CSV Conventions
 

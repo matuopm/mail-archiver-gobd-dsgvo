@@ -3607,4 +3607,16 @@
   <data name="Log_AccessLogChainBroken" xml:space="preserve">
     <value>Log checked: damaged from entry no. {0}. {1} entries before it are intact; check value of the last intact entry: {2}</value>
   </data>
+  <data name="Log_ApiSearch" xml:space="preserve">
+    <value>Via REST API: {0}</value>
+  </data>
+  <data name="Log_ApiAccess" xml:space="preserve">
+    <value>Via REST API</value>
+  </data>
+  <data name="Log_McpSearch" xml:space="preserve">
+    <value>Via MCP (AI agent): {0}</value>
+  </data>
+  <data name="Log_McpAccess" xml:space="preserve">
+    <value>Via MCP (AI agent)</value>
+  </data>
 </root>

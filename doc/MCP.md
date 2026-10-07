@@ -192,7 +192,9 @@ header. This is independent of the REST API's rate-limit policy.
 Every tool call is logged through the same `IAccessLogService` as the REST API,
 with the owning username and the matching access type (`Search`, `Open`,
 `Download`). MCP activity is therefore visible on the **Logs** page alongside
-REST API and web-UI activity, for a single audit trail.
+REST API and web-UI activity, for a single audit trail. Each entry is marked "Via MCP
+(AI agent)" (German "Über MCP (KI-Agent)") in its details, and like every log entry it is
+write-once and part of the hash chain.
 
 ## Connecting an agent
 
