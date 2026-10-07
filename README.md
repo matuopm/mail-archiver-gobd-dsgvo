@@ -41,6 +41,10 @@ Der Fork ist bewusst ein reiner GoBD-Modus ohne Schalter. Wer diese Einschränku
 - Nicht mit Administrator kombinierbar.
 - Details: [doc/UserManagement.md](doc/UserManagement.md)
 
+## 📚 Projektdokumentation
+
+Anforderungen aus GoBD und DSGVO, Architekturentscheidungen, Roadmap, Testprotokolle und eine Muster-Verfahrensdokumentation zum Ausfüllen stehen in [`doc/gobd/`](doc/gobd/README.md). Am bequemsten liest man sie in [Obsidian](https://obsidian.md): den Ordner `doc/gobd` herunterladen und über „Ordner als Vault öffnen“ laden.
+
 ## ✨ Weitere Funktionen (aus dem Original)
 
 - Automatischer Abruf mehrerer Postfächer per IMAP, außerdem Microsoft 365 und private Microsoft-Konten
