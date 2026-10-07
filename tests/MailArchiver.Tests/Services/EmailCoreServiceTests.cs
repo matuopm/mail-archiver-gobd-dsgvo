@@ -93,6 +93,52 @@ public class EmailCoreServiceTests
     }
 
     [Fact]
+    public async Task Search_RestrictedAuditor_IsLimitedToMailboxesAndPeriod()
+    {
+        // The optimized search runs raw SQL past the DbContext query filters, so the
+        // auditor scope must be applied to its parameters as well.
+        var ctx = _fixture.CreateContext();
+        try
+        {
+            var assigned = await SeedAccountAsync(ctx);
+            var other = await SeedAccountAsync(ctx);
+            var inside = BuildEmail(assigned, "inside", "a@x.com", "b@x.com", sentDate: new DateTime(2024, 3, 1, 10, 0, 0));
+            var lastDay = BuildEmail(assigned, "lastDay", "a@x.com", "b@x.com", sentDate: new DateTime(2024, 6, 30, 22, 0, 0));
+            var before = BuildEmail(assigned, "before", "a@x.com", "b@x.com", sentDate: new DateTime(2023, 12, 31, 23, 0, 0));
+            var after = BuildEmail(assigned, "after", "a@x.com", "b@x.com", sentDate: new DateTime(2024, 7, 1, 1, 0, 0));
+            var otherMailbox = BuildEmail(other, "other", "a@x.com", "b@x.com", sentDate: new DateTime(2024, 3, 1, 10, 0, 0));
+            ctx.ArchivedEmails.AddRange(inside, lastDay, before, after, otherMailbox);
+            await ctx.SaveChangesAsync();
+
+            var http = new Microsoft.AspNetCore.Http.DefaultHttpContext();
+            http.Items[MailArchiver.Services.AuditorScope.ItemKey] = new MailArchiver.Services.AuditorScope(
+                new List<int> { assigned.Id }, new DateTime(2024, 1, 1), new DateTime(2024, 6, 30));
+            var options = new DbContextOptionsBuilder<MailArchiverDbContext>()
+                .UseNpgsql(ctx.Database.GetConnectionString())
+                .ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning))
+                .Options;
+            await using var scoped = new MailArchiverDbContext(options, new Microsoft.AspNetCore.Http.HttpContextAccessor { HttpContext = http });
+            var svc = ServiceFactory.CreateEmailCoreService(scoped);
+
+            var accountIds = new List<int> { assigned.Id, other.Id };
+            var (emails, total) = await svc.SearchEmailsAsync(null, null, null, null, null, null, 0, 50, accountIds);
+            Assert.Equal(2, total);
+            Assert.Equal(new[] { inside.Id, lastDay.Id }.OrderBy(i => i), emails.Select(e => e.Id).OrderBy(i => i));
+
+            // A wider requested period is narrowed to the scope; another mailbox stays empty.
+            (_, total) = await svc.SearchEmailsAsync(null, new DateTime(2020, 1, 1), new DateTime(2030, 1, 1), assigned.Id, null, null, 0, 50);
+            Assert.Equal(2, total);
+            (_, total) = await svc.SearchEmailsAsync(null, null, null, other.Id, null, null, 0, 50);
+            Assert.Equal(0, total);
+        }
+        finally
+        {
+            await CleanupTestAccountAsync(ctx);
+            await ctx.DisposeAsync();
+        }
+    }
+
+    [Fact]
     public async Task Search_TakeOver1000_IsClamped()
     {
         var ctx = _fixture.CreateContext();

@@ -3258,6 +3258,16 @@ namespace MailArchiver.Controllers
                     ids = allowedEmailIds;
                 }
 
+                // The export runs in the background without the auditor scope, so drop
+                // everything outside it now (the query filter of the context applies here).
+                if (_context.ScopeActive)
+                {
+                    ids = await _context.ArchivedEmails
+                        .Where(e => ids.Contains(e.Id))
+                        .Select(e => e.Id)
+                        .ToListAsync();
+                }
+
                 if (!ids.Any())
                 {
                     TempData["ErrorMessage"] = "You do not have access to any of the selected emails.";

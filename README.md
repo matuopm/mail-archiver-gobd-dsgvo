@@ -37,6 +37,7 @@ Der Fork ist bewusst ein reiner GoBD-Modus ohne Schalter. Wer diese Einschränku
 
 ### Rolle „Prüfer (nur Lesen)“
 - Für Betriebsprüfer oder externe Prüfer: sieht alle Postfächer und das gesamte Protokoll, kann suchen, öffnen und exportieren.
+- Optional auf bestimmte Postfächer und einen Prüfzeitraum begrenzbar. Das gilt auch für Export, REST-API und MCP.
 - Kann nichts ändern, löschen, wiederherstellen oder importieren. Der Server lehnt alles ab, was nicht ausdrücklich als lesend freigegeben ist.
 - Nicht mit Administrator kombinierbar.
 - Details: [doc/UserManagement.md](doc/UserManagement.md)

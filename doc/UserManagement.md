@@ -91,8 +91,9 @@ example when a tax audit only covers certain years:
 
 The limit applies to everything the auditor reads: search, email view, attachments,
 originals, exports, dashboard, REST API and MCP. It is enforced by global query filters of
-the database context for every request of that auditor, so emails outside the scope do not
-exist for them. A limited auditor sees only those access log entries that refer to emails
+the database context for every request of that auditor (the search, which runs its own SQL,
+narrows its parameters to the same scope), so emails outside the scope do not exist for
+them. Storage figures on the dashboard still refer to the whole mail account and database. A limited auditor sees only those access log entries that refer to emails
 or mail accounts within the scope, plus their own entries. Changes take effect with the
 auditor's next request.
 
