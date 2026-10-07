@@ -3,6 +3,7 @@ using MailArchiver.Models.ViewModels;
 using MailArchiver.Services;
 using MailArchiver.Services.Shared;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
 
 namespace MailArchiver.Controllers
@@ -44,10 +45,20 @@ namespace MailArchiver.Controllers
             
             DashboardViewModel model;
             
-            // Admins and auditors see all accounts, everyone else only assigned accounts
-            if (currentUser != null && (currentUser.IsAdmin || currentUser.IsAuditor))
+            // Admins and unrestricted auditors see all accounts, everyone else only assigned accounts
+            var auditorScope = AuditorScope.Get(HttpContext);
+            if (currentUser != null && (currentUser.IsAdmin || (currentUser.IsAuditor && auditorScope == null)))
             {
                 model = await _emailCoreService.GetDashboardStatisticsAsync(LastRunHadIssues);
+            }
+            else if (currentUser != null && currentUser.IsAuditor && auditorScope != null)
+            {
+                // Restricted auditor: the query filters limit every count to the audit scope
+                var accountIds = auditorScope.AccountIds
+                    ?? await HttpContext.RequestServices.GetRequiredService<MailArchiver.Data.MailArchiverDbContext>()
+                        .MailAccounts.Select(a => a.Id).ToListAsync();
+                model = await CreateCustomDashboardStatisticsAsync(accountIds,
+                    $"auditor-{auditorScope.FromDate:yyyyMMdd}-{auditorScope.ToDate:yyyyMMdd}-");
             }
             else if (currentUser != null)
             {
@@ -172,11 +183,11 @@ namespace MailArchiver.Controllers
             return Ok();
         }
 
-        private async Task<DashboardViewModel> CreateCustomDashboardStatisticsAsync(List<int> accountIds)
+        private async Task<DashboardViewModel> CreateCustomDashboardStatisticsAsync(List<int> accountIds, string cacheKeyPrefix = "user-")
         {
             // Cache per unique account assignment so repeated dashboard loads by the
             // same user (or users sharing the same accounts) hit the memory cache.
-            var cacheKeySuffix = "user-" + string.Join(",", accountIds.OrderBy(id => id));
+            var cacheKeySuffix = cacheKeyPrefix + string.Join(",", accountIds.OrderBy(id => id));
             return await _emailCoreService.GetOrCreateCachedStatisticsAsync(cacheKeySuffix, ctx =>
             {
                 var model = new DashboardViewModel();

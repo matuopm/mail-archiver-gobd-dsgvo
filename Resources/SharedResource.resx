@@ -3593,7 +3593,7 @@
     <value>Auditor (read only)</value>
   </data>
   <data name="AuditorRoleDescription" xml:space="preserve">
-    <value>Can search, open and download the emails of all mail accounts and read the whole access log, e.g. for a tax auditor. Cannot change, restore or delete anything.</value>
+    <value>Can search, open and download the emails of all mail accounts (or only the assigned ones and an audit period) and read the access log, e.g. for a tax auditor. Cannot change, restore or delete anything.</value>
   </data>
   <data name="AuditorRoleExclusive" xml:space="preserve">
     <value>An auditor cannot also be admin or self-manager.</value>
@@ -3606,5 +3606,17 @@
   </data>
   <data name="Log_AccessLogChainBroken" xml:space="preserve">
     <value>Log checked: damaged from entry no. {0}. {1} entries before it are intact; check value of the last intact entry: {2}</value>
+  </data>
+  <data name="AuditFromDate" xml:space="preserve">
+    <value>Audit period from</value>
+  </data>
+  <data name="AuditToDate" xml:space="preserve">
+    <value>Audit period to</value>
+  </data>
+  <data name="AuditPeriodInvalid" xml:space="preserve">
+    <value>The end of the audit period must not be before its start.</value>
+  </data>
+  <data name="AuditorScopeHint" xml:space="preserve">
+    <value>Only for auditors, both optional: limits the auditor to emails sent within this period. To limit the auditor to certain mail accounts, assign them with "Assign"; an auditor without assigned mail accounts sees all of them. A limited auditor only sees log entries about these emails and mail accounts, plus their own.</value>
   </data>
 </root>

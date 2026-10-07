@@ -63,7 +63,7 @@ Standard users have limited access and can:
 ### Auditor Users (read only)
 The auditor role is meant for a tax auditor or an external reviewer who needs read access
 to the archive (GoBD "Z1" read access). An auditor:
-- Sees **all** mail accounts, without any mailbox assignment
+- Sees **all** mail accounts without any mailbox assignment, unless limited (see below)
 - Can search, open and download emails and attachments, and export selected emails
 - Reads the whole access log of all users and can run **Check log**
 - Can change their own password, set up 2FA and manage their own API keys (the API and
@@ -78,6 +78,23 @@ a plain read (GET) is refused unless the action is explicitly marked as read-onl
 (`[AuditorAllowed]`), and the restore forms are closed even for GET (`[AuditorForbidden]`).
 Actions added later are therefore closed for auditors until someone reviews them.
 Everything an auditor opens is recorded in the access log like for every other user.
+
+#### Limiting an auditor to mailboxes and an audit period
+
+By default an auditor sees every mail account and every email. Both can be limited, for
+example when a tax audit only covers certain years:
+
+- **Mailboxes:** assign the mail accounts with **Assign**, as for a standard user. An
+  auditor without assigned mail accounts sees all of them.
+- **Audit period:** on the user's **Edit** page, set *Audit period from* and/or *to*
+  (dates inclusive, either may stay empty). Only emails sent within the period are visible.
+
+The limit applies to everything the auditor reads: search, email view, attachments,
+originals, exports, dashboard, REST API and MCP. It is enforced by global query filters of
+the database context for every request of that auditor, so emails outside the scope do not
+exist for them. A limited auditor sees only those access log entries that refer to emails
+or mail accounts within the scope, plus their own entries. Changes take effect with the
+auditor's next request.
 
 Role changes take effect at the next login. Deactivate the auditor's account when the
 audit is over.

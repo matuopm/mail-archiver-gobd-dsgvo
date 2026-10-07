@@ -1,4 +1,6 @@
 using MailArchiver.Models;
+using MailArchiver.Services;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 
 namespace MailArchiver.Data
@@ -22,10 +24,24 @@ namespace MailArchiver.Data
         public DbSet<ArchivedEmailSource> ArchivedEmailSources { get; set; }
         public DbSet<RetentionHold> RetentionHolds { get; set; }
 
-        public MailArchiverDbContext(DbContextOptions<MailArchiverDbContext> options)
+        private readonly IHttpContextAccessor? _httpContextAccessor;
+
+        public MailArchiverDbContext(DbContextOptions<MailArchiverDbContext> options, IHttpContextAccessor? httpContextAccessor = null)
             : base(options)
         {
+            _httpContextAccessor = httpContextAccessor;
         }
+
+        // Scope of a restricted auditor in the current request (see AuditorScope). Read by the
+        // query filters below on every query; outside a request (background jobs) it is null.
+        private AuditorScope? Scope => AuditorScope.Get(_httpContextAccessor?.HttpContext);
+        public bool ScopeActive => Scope != null;
+        public bool ScopeLimitsAccounts => Scope?.AccountIds != null;
+        public List<int> ScopeAccountIds => Scope?.AccountIds ?? new List<int>();
+        public bool ScopeHasFrom => Scope?.FromDate != null;
+        public DateTime ScopeFrom => Scope?.FromDate ?? default;
+        public bool ScopeHasTo => Scope?.ToDate != null;
+        public DateTime ScopeToExclusive => Scope?.ToDate?.AddDays(1) ?? default;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -596,6 +612,23 @@ namespace MailArchiver.Data
             modelBuilder.Entity<AuditExportJob>()
                 .HasIndex(j => j.Status)
                 .HasDatabaseName("IX_AuditExportJobs_Status");
+
+            // Restricted auditor: every email, attachment, original and mail account outside
+            // the assigned mailboxes or the audit period is invisible, whatever the query.
+            modelBuilder.Entity<ArchivedEmail>().HasQueryFilter(e => !ScopeActive
+                || ((!ScopeLimitsAccounts || ScopeAccountIds.Contains(e.MailAccountId))
+                    && (!ScopeHasFrom || e.SentDate >= ScopeFrom)
+                    && (!ScopeHasTo || e.SentDate < ScopeToExclusive)));
+            modelBuilder.Entity<EmailAttachment>().HasQueryFilter(a => !ScopeActive
+                || ((!ScopeLimitsAccounts || ScopeAccountIds.Contains(a.ArchivedEmail.MailAccountId))
+                    && (!ScopeHasFrom || a.ArchivedEmail.SentDate >= ScopeFrom)
+                    && (!ScopeHasTo || a.ArchivedEmail.SentDate < ScopeToExclusive)));
+            modelBuilder.Entity<ArchivedEmailSource>().HasQueryFilter(o => !ScopeActive
+                || ((!ScopeLimitsAccounts || ScopeAccountIds.Contains(o.ArchivedEmail.MailAccountId))
+                    && (!ScopeHasFrom || o.ArchivedEmail.SentDate >= ScopeFrom)
+                    && (!ScopeHasTo || o.ArchivedEmail.SentDate < ScopeToExclusive)));
+            modelBuilder.Entity<MailAccount>().HasQueryFilter(m => !ScopeActive
+                || !ScopeLimitsAccounts || ScopeAccountIds.Contains(m.Id));
         }
     }
 }

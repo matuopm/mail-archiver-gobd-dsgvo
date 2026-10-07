@@ -8,6 +8,8 @@ namespace MailArchiver.Auth.Extensions
         {
             // Add our custom authentication middleware
             app.UseMiddleware<AuthenticationMiddleware>();
+            // Limits a restricted auditor to the assigned mailboxes and the audit period
+            app.UseMiddleware<MailArchiver.Services.AuditorScopeMiddleware>();
             app.UseAuthorization();
             return app;
         }
