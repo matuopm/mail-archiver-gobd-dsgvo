@@ -10,6 +10,9 @@ Mail Archiver is a comprehensive application designed to archive emails from var
 
 ## 📚 Documentation Sections
 
+### 🔏 GoBD/DSGVO Project Documentation (German)
+- [GoBD-Fork: Anforderungen, Entscheidungen, Tests, Muster-Verfahrensdokumentation](gobd/README.md) - best read as an Obsidian vault (open the folder `doc/gobd`)
+
 ### 🛠️ Installation & Maintenance
 - [Backup and Restore Guide](BackupRestore.md)
 - [Database Maintenance Guide](DatabaseMaintenance.md)
