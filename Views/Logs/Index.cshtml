@@ -152,6 +152,10 @@
                                                 @(log.EmailFrom ?? "") - @Localizer["Email"] #@log.EmailId
                                             </a>
                                         }
+                                        @if (!string.IsNullOrEmpty(log.SearchParameters))
+                                        {
+                                            <small class="text-muted d-block">@MailArchiver.Services.Shared.LogText.Display(log.SearchParameters, Localizer)</small>
+                                        }
                                     }
                                     else if (!string.IsNullOrEmpty(log.SearchParameters))
                                     {
@@ -255,6 +259,10 @@
                                     <a asp-controller="Emails" asp-action="Details" asp-route-id="@log.EmailId" target="_blank">
                                         @(log.EmailFrom ?? "") - @Localizer["Email"] #@log.EmailId
                                     </a>
+                                }
+                                @if (!string.IsNullOrEmpty(log.SearchParameters))
+                                {
+                                    <small class="text-muted d-block">@MailArchiver.Services.Shared.LogText.Display(log.SearchParameters, Localizer)</small>
                                 }
                             </div>
                         }

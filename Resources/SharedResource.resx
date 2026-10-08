@@ -3619,4 +3619,16 @@
   <data name="AuditorScopeHint" xml:space="preserve">
     <value>Only for auditors, both optional: limits the auditor to emails sent within this period. To limit the auditor to certain mail accounts, assign them with "Assign"; an auditor without assigned mail accounts sees all of them. A limited auditor only sees log entries about these emails and mail accounts, plus their own.</value>
   </data>
+  <data name="Log_ApiSearch" xml:space="preserve">
+    <value>Via REST API: {0}</value>
+  </data>
+  <data name="Log_ApiAccess" xml:space="preserve">
+    <value>Via REST API</value>
+  </data>
+  <data name="Log_McpSearch" xml:space="preserve">
+    <value>Via MCP (AI agent): {0}</value>
+  </data>
+  <data name="Log_McpAccess" xml:space="preserve">
+    <value>Via MCP (AI agent)</value>
+  </data>
 </root>

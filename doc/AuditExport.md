@@ -26,6 +26,7 @@ The generated ZIP file is named `audit-export-<timestamp>.zip` and contains:
 | `index.dtd` | The DTD the index file references; required by importing tools for validation |
 | `emails.csv` | One row per archived email in the selected period/mailbox |
 | `attachments.csv` | Optional; one row per attachment of the exported emails |
+| `accesslog.csv` | Always; the access log entries of the selected period |
 
 ### Table `emails.csv`
 
@@ -57,6 +58,57 @@ Columns (no header row; the column names come from `INDEX.XML`, as usual for thi
 | ContentType | MIME type |
 | Size | Size in bytes (numeric) |
 | Sha256 | SHA-256 hash of the content (from the content-addressed attachment storage) |
+
+### Table `accesslog.csv`
+
+The access log entries whose time lies in the selected period, in chain order. Type and
+event texts are always German, whatever the language of the user who starts the export.
+With a mailbox selected, only entries of that mailbox are included (entries naming the
+mailbox or an email of it); the chain then has gaps. Without a mailbox, the table holds
+every entry of the period without gaps: each `PrevHash` equals the `Hash` of the row
+before it.
+
+Each `Hash` can be recomputed from the table alone, without access to the database:
+
+```
+Hash = lowercase hex of SHA-256( UTF-8 bytes of HashInput )
+```
+
+`HashInput` is the exact text the database hashed when it wrote the entry
+(`archive_worm.access_log_hash`, see [doc/sql/MigrateV2610_3-audit-log.sql](sql/MigrateV2610_3-audit-log.sql)).
+It joins these values with `|`:
+
+```
+ChainSeq|Id|'Username'|TypeCode|TimestampExact|'EmailId'|'EmailSubject'|'EmailFrom'|'RawDetails'|'MailAccountId'|PrevHash
+```
+
+Every value except `ChainSeq`, `Id`, `TypeCode`, `TimestampExact` and `PrevHash` is in single
+quotes (a quote inside is doubled; text with a backslash is written as `E'…'` with the
+backslash doubled, as PostgreSQL's `quote_nullable` does). A missing value is the word `NULL`
+without quotes. `TimestampExact` is UTC with microseconds, `PrevHash` is empty for the first
+entry of the log. An auditor checks a row by hashing `HashInput` and comparing the result
+with `Hash`, by comparing the values in `HashInput` with the columns of the same row, and by
+checking that `HashInput` ends with the `Hash` of the row before. **Check log** on the Logs
+page ([Logs](Logs.md#checking-the-log)) checks the whole chain in the database.
+
+| Column | Description |
+|---|---|
+| ChainSeq | Position in the hash chain (numeric) |
+| Timestamp | Time of the access, ISO 8601 UTC |
+| Username | User (or owner of the API key) |
+| Type | Kind of access, German (e.g. "Öffnen", "Suche") |
+| EmailId | Email the entry refers to, if any |
+| EmailSubject | Subject of that email |
+| EmailFrom | Sender of that email |
+| Details | Search parameters or event text, German for entries written since the fork's log texts; older entries keep their English text |
+| MailAccountId | Mailbox the entry refers to, if any |
+| PrevHash | Hash of the previous entry in the chain |
+| Hash | SHA-256 of this entry |
+| Id | Internal ID of the entry (numeric) |
+| TypeCode | Kind of access as stored (numeric) |
+| TimestampExact | Time of the access as hashed, UTC with microseconds (`yyyy-MM-ddTHH:mm:ss.ffffff`) |
+| RawDetails | `Details` as stored, before translation (`@log:` event key, values separated by the control character U+001F) |
+| HashInput | The text the hash is computed over (see above) |
 
 ### CSV Conventions
 

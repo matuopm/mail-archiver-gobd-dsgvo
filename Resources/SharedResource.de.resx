@@ -3633,4 +3633,16 @@
   <data name="AuditorScopeHint" xml:space="preserve">
     <value>Nur für Prüfer, beides optional: begrenzt den Prüfer auf E-Mails, die in diesem Zeitraum gesendet wurden. Um ihn auf bestimmte Postfächer zu begrenzen, diese über „zuweisen“ zuordnen; ein Prüfer ohne zugeordnete Postfächer sieht alle. Ein begrenzter Prüfer sieht im Protokoll nur Einträge zu diesen E-Mails und Postfächern sowie seine eigenen.</value>
   </data>
+  <data name="Log_ApiSearch" xml:space="preserve">
+    <value>Über REST-API: {0}</value>
+  </data>
+  <data name="Log_ApiAccess" xml:space="preserve">
+    <value>Über REST-API</value>
+  </data>
+  <data name="Log_McpSearch" xml:space="preserve">
+    <value>Über MCP (KI-Agent): {0}</value>
+  </data>
+  <data name="Log_McpAccess" xml:space="preserve">
+    <value>Über MCP (KI-Agent)</value>
+  </data>
 </root>
