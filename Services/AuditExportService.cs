@@ -634,8 +634,19 @@ namespace MailArchiver.Services
         }
 
         private sealed record AccessLogRow(
-            long ChainSeq, DateTime Timestamp, string Username, int Type, int? EmailId, string? EmailSubject,
-            string? EmailFrom, string? SearchParameters, int? MailAccountId, string? PrevHash, string Hash);
+            long ChainSeq, int Id, DateTime Timestamp, string HashTimestamp, string Username, int Type, int? EmailId,
+            string? EmailSubject, string? EmailFrom, string? SearchParameters, int? MailAccountId, string? PrevHash,
+            string Hash, string HashInput);
+
+        // The same text archive_worm.access_log_hash() hashes (doc/sql/MigrateV2610_3-audit-log.sql).
+        // Exported as HashInput so an auditor can check SHA-256(UTF-8(HashInput)) = Hash without
+        // rebuilding the NULL/quoting rules; a test pins it to the database function.
+        private const string AccessLogHashInputSql =
+            "concat_ws('|', l.\"ChainSeq\", l.\"Id\", quote_nullable(l.\"Username\"), l.\"Type\", " +
+            "to_char(l.\"Timestamp\", 'YYYY-MM-DD\"T\"HH24:MI:SS.US'), " +
+            "quote_nullable(l.\"EmailId\"), quote_nullable(l.\"EmailSubject\"), quote_nullable(l.\"EmailFrom\"), " +
+            "quote_nullable(l.\"SearchParameters\"), quote_nullable(l.\"MailAccountId\"), " +
+            "coalesce(trim(l.\"PrevHash\"), ''))";
 
         /// <summary>
         /// Access log entries of the export period, in chain order with their hash chain, so
@@ -662,9 +673,12 @@ namespace MailArchiver.Services
                     cancellationToken.ThrowIfCancellationRequested();
 
                     var batch = await context.Database.SqlQueryRaw<AccessLogRow>(
-                            "SELECT l.\"ChainSeq\", l.\"Timestamp\", l.\"Username\", l.\"Type\", l.\"EmailId\", " +
+                            "SELECT l.\"ChainSeq\", l.\"Id\", l.\"Timestamp\", " +
+                            "to_char(l.\"Timestamp\", 'YYYY-MM-DD\"T\"HH24:MI:SS.US') AS \"HashTimestamp\", " +
+                            "l.\"Username\", l.\"Type\", l.\"EmailId\", " +
                             "l.\"EmailSubject\", l.\"EmailFrom\", l.\"SearchParameters\", l.\"MailAccountId\", " +
-                            "trim(l.\"PrevHash\") AS \"PrevHash\", trim(l.\"Hash\") AS \"Hash\" " +
+                            "trim(l.\"PrevHash\") AS \"PrevHash\", trim(l.\"Hash\") AS \"Hash\", " +
+                            AccessLogHashInputSql + " AS \"HashInput\" " +
                             "FROM archive_worm.\"AccessLogs\" l " +
                             "WHERE l.\"ChainSeq\" > {0} AND l.\"Timestamp\" >= {1} AND l.\"Timestamp\" <= {2} " +
                             "AND ({3}::integer IS NULL OR l.\"MailAccountId\" = {3} OR EXISTS (" +
@@ -692,7 +706,12 @@ namespace MailArchiver.Services
                             Csv((localizer != null ? LogText.Display(row.SearchParameters, localizer) : row.SearchParameters) ?? string.Empty),
                             Csv(row.MailAccountId?.ToString(CultureInfo.InvariantCulture) ?? string.Empty),
                             Csv(row.PrevHash ?? string.Empty),
-                            Csv(row.Hash));
+                            Csv(row.Hash),
+                            Csv(row.Id.ToString(CultureInfo.InvariantCulture)),
+                            Csv(row.Type.ToString(CultureInfo.InvariantCulture)),
+                            Csv(row.HashTimestamp),
+                            Csv(row.SearchParameters ?? string.Empty),
+                            Csv(row.HashInput));
                         await writer.WriteAsync(line);
                         await writer.WriteAsync('\n');
                         lastSeq = row.ChainSeq;
@@ -743,7 +762,7 @@ namespace MailArchiver.Services
                 WriteTable(writer, AttachmentCsvName, "Anhang-Metadaten", "Metadaten archivierter E-Mail-Anhänge", AttachmentCsvColumns);
             }
             WriteTable(writer, AccessLogCsvName, "Zugriffsprotokoll",
-                "Einträge des Zugriffsprotokolls im Zeitraum mit SHA-256-Verkettung (PrevHash, Hash), Texte auf Deutsch", AccessLogCsvColumns);
+                "Einträge des Zugriffsprotokolls im Zeitraum mit SHA-256-Verkettung, Texte auf Deutsch. Prüfung: SHA-256 (hex) über HashInput in UTF-8 ergibt Hash; HashInput endet mit PrevHash, dem Hash des vorigen Eintrags. HashInput = ChainSeq|Id|Benutzer|TypeCode|TimestampExact (UTC)|EmailId|Betreff|Absender|RawDetails|MailAccountId|PrevHash, Werte außer ChainSeq, Id, TypeCode, TimestampExact und PrevHash in einfachen Anführungszeichen (wie PostgreSQL quote_nullable), fehlende Werte als NULL", AccessLogCsvColumns);
 
             writer.WriteEndElement(); // Media
             writer.WriteEndElement(); // DataSet
@@ -789,7 +808,12 @@ namespace MailArchiver.Services
             ("Details", "AlphaNumeric"),
             ("MailAccountId", "AlphaNumeric"),
             ("PrevHash", "AlphaNumeric"),
-            ("Hash", "AlphaNumeric")
+            ("Hash", "AlphaNumeric"),
+            ("Id", "Numeric"),
+            ("TypeCode", "Numeric"),
+            ("TimestampExact", "AlphaNumeric"),
+            ("RawDetails", "AlphaNumeric"),
+            ("HashInput", "AlphaNumeric")
         };
 
         private static void WriteTable(XmlWriter writer, string url, string name, string description, (string Name, string Type)[] columns)
