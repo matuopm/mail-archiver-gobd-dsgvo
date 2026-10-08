@@ -68,6 +68,7 @@ Wichtig:
 
 ## ⚠️ Grenzen
 
+- **Microsoft 365:** Das Speichern der Originale aus Microsoft-365-Postfächern ist nur mit automatischen Tests geprüft, noch nicht mit einem echten Postfach.
 - **Ältere E-Mails:** E-Mails, die vor dieser Version archiviert wurden, haben kein Original. Sie werden auch nicht automatisch gelöscht.
 - **Datensicherung:** Sicherung und Rücksicherung der gehärteten Datenbank sind nicht getestet. Vor dem Ernstfall einmal auf einem Testsystem durchspielen.
 - **Datenbank-Superuser:** Wer Superuser-Rechte auf der Datenbank hat, kann den Schutz umgehen. Die Protokollkette macht Änderungen am Protokoll sichtbar, verhindert sie aber nicht.
