@@ -16,7 +16,7 @@ Der Fork ist bewusst ein reiner GoBD-Modus ohne Schalter. Wer diese Einschränku
 ### Originale unveränderbar gespeichert
 - Jede E-Mail wird beim Abruf zusätzlich byte-genau als Original (`.eml`) mit SHA-256 gespeichert, in einem eigenen Datenbankschema `archive_worm`.
 - Die Datenbank selbst verhindert jede Änderung: Ändern und Leeren werden abgelehnt, Löschen erst nach Ablauf der Frist erlaubt, die Prüfsumme wird beim Speichern nachgerechnet.
-- Das gilt für den IMAP-Abruf und für den Import von EML- und MBOX-Dateien (Weboberfläche und Kommandozeile).
+- Das gilt für den IMAP-Abruf, für Microsoft-365-Postfächer und für den Import von EML- und MBOX-Dateien (Weboberfläche und Kommandozeile). Bei Microsoft 365 ist das Original die E-Mail, wie Microsoft sie ausliefert; Exchange setzt sie dafür neu zusammen.
 - Optional lässt sich die Datenbank härten: Die Anwendung arbeitet dann mit einer eigenen Rolle, die im geschützten Speicher nur lesen und hinzufügen darf.
 - Details: [doc/WormStorage.md](doc/WormStorage.md)
 
@@ -68,7 +68,7 @@ Wichtig:
 
 ## ⚠️ Grenzen
 
-- **Microsoft 365:** E-Mails aus Microsoft-365-Postfächern werden ohne Original gespeichert. Sie werden auch nicht automatisch gelöscht.
+- **Ältere E-Mails:** E-Mails, die vor dieser Version archiviert wurden, haben kein Original. Sie werden auch nicht automatisch gelöscht.
 - **Datensicherung:** Sicherung und Rücksicherung der gehärteten Datenbank sind nicht getestet. Vor dem Ernstfall einmal auf einem Testsystem durchspielen.
 - **Datenbank-Superuser:** Wer Superuser-Rechte auf der Datenbank hat, kann den Schutz umgehen. Die Protokollkette macht Änderungen am Protokoll sichtbar, verhindert sie aber nicht.
 - **Keine Rechtsberatung:** Die Software unterstützt eine GoBD-konforme Archivierung, ersetzt aber weder die eigene Verfahrensdokumentation noch die Abstimmung mit Steuerberatung oder Datenschutzbeauftragten.
