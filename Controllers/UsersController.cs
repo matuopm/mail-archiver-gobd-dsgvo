@@ -108,6 +108,11 @@ namespace MailArchiver.Controllers
                 ModelState.AddModelError("IsAuditor", _localizer["AuditorRoleExclusive"]);
             }
 
+            if (model.AuditFromDate.HasValue && model.AuditToDate.HasValue && model.AuditFromDate > model.AuditToDate)
+            {
+                ModelState.AddModelError("AuditToDate", _localizer["AuditPeriodInvalid"]);
+            }
+
             if (!ModelState.IsValid)
             {
                 _logger.LogWarning("ModelState is invalid. Errors: {Errors}",
@@ -131,6 +136,8 @@ namespace MailArchiver.Controllers
                 {
                     newUser.IsSelfManager = model.IsSelfManager;
                     newUser.IsAuditor = model.IsAuditor;
+                    newUser.AuditFromDate = model.IsAuditor ? model.AuditFromDate?.Date : null;
+                    newUser.AuditToDate = model.IsAuditor ? model.AuditToDate?.Date : null;
                     await _userService.UpdateUserAsync(newUser);
                 }
 

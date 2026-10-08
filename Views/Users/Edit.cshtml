@@ -74,7 +74,7 @@
                                 <span asp-validation-for="IsAuditor" class="text-danger"></span>
                             </div>
                         </div>
-                        <div class="col-12">
+                        <div class="col-12" id="auditPeriod">
                             <div class="row">
                                 <div class="col-md-4 mb-3">
                                     <label asp-for="AuditFromDate" class="form-label">@Localizer["AuditFromDate"]</label>
@@ -172,6 +172,13 @@
             unsavedWarning: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Localizer["UnsavedChangesWarning"].Value))
         };
         $(document).ready(function() {
+            // The audit period only applies to auditors
+            function toggleAuditPeriod() {
+                $('#auditPeriod').toggle($('#IsAuditor').is(':checked'));
+            }
+            $('#IsAuditor').on('change', toggleAuditPeriod);
+            toggleAuditPeriod();
+
             let isDirty = false;
             let isSubmitting = false;
 

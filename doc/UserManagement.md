@@ -86,7 +86,7 @@ example when a tax audit only covers certain years:
 
 - **Mailboxes:** assign the mail accounts with **Assign**, as for a standard user. An
   auditor without assigned mail accounts sees all of them.
-- **Audit period:** on the user's **Edit** page, set *Audit period from* and/or *to*
+- **Audit period:** when creating the auditor or later on the user's **Edit** page, set *Audit period from* and/or *to*
   (dates inclusive, either may stay empty). Only emails sent within the period are visible.
 
 The limit applies to everything the auditor reads: search, email view, attachments,
