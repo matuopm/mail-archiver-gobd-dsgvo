@@ -31,6 +31,20 @@ namespace MailArchiver.Controllers
             _localizer = localizer;
         }
 
+        private async Task<List<AccessLog>> LimitToAuditorScopeAsync(List<AccessLog> logs, string currentUsername)
+        {
+            // The query filters of the DbContext already limit both lists to the audit scope
+            var emailIds = logs.Where(l => l.EmailId.HasValue).Select(l => l.EmailId!.Value).Distinct().ToList();
+            var visibleEmails = (await _context.ArchivedEmails.Where(e => emailIds.Contains(e.Id)).Select(e => e.Id).ToListAsync()).ToHashSet();
+            var visibleAccounts = (await _context.MailAccounts.Select(a => a.Id).ToListAsync()).ToHashSet();
+
+            return logs.Where(l => l.Username == currentUsername
+                    || ((l.EmailId.HasValue || l.MailAccountId.HasValue)
+                        && (!l.EmailId.HasValue || visibleEmails.Contains(l.EmailId.Value))
+                        && (!l.MailAccountId.HasValue || visibleAccounts.Contains(l.MailAccountId.Value))))
+                .ToList();
+        }
+
         public async Task<IActionResult> Index(int page = 1, int pageSize = 50, DateTime? fromDate = null, DateTime? toDate = null, string username = null, AccessLogType? type = null)
         {
             var currentUsername = _authenticationService.GetCurrentUserDisplayName(HttpContext);
@@ -59,6 +73,13 @@ namespace MailArchiver.Controllers
             {
                 // For non-admin users, they can only see their own logs regardless of the username parameter
                 logs = await _accessLogService.GetLogsForUserAsync(currentUsername, fromDate, toDate); // Get only user's logs
+            }
+
+            // A restricted auditor only sees entries about emails and mailboxes within the
+            // audit scope, and their own entries
+            if (!isAdmin && AuditorScope.Get(HttpContext) != null)
+            {
+                logs = await LimitToAuditorScopeAsync(logs, currentUsername);
             }
 
             // Filter by type if specified

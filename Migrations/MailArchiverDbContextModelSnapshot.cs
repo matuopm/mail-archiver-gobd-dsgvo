@@ -466,6 +466,12 @@ namespace MailArchiver.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<DateTime?>("AuditFromDate")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<DateTime?>("AuditToDate")
+                        .HasColumnType("timestamp without time zone");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp without time zone");
 

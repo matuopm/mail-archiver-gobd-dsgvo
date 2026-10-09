@@ -18,6 +18,12 @@ namespace MailArchiver.Models.ViewModels
         public bool IsSelfManager { get; set; } = false;
 
         public bool IsAuditor { get; set; }
+
+        [DataType(DataType.Date)]
+        public DateTime? AuditFromDate { get; set; }
+
+        [DataType(DataType.Date)]
+        public DateTime? AuditToDate { get; set; }
         
         public bool IsActive { get; set; } = true;
     }

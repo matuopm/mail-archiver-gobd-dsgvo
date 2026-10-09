@@ -97,6 +97,20 @@
                                 <span asp-validation-for="IsAuditor" class="text-danger"></span>
                             </div>
                         </div>
+                        <div class="col-12" id="auditPeriod">
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label asp-for="AuditFromDate" class="form-label">@Localizer["AuditFromDate"]</label>
+                                    <input asp-for="AuditFromDate" class="form-control" type="date" />
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label asp-for="AuditToDate" class="form-label">@Localizer["AuditToDate"]</label>
+                                    <input asp-for="AuditToDate" class="form-control" type="date" />
+                                    <span asp-validation-for="AuditToDate" class="text-danger"></span>
+                                </div>
+                                <div class="col-12 form-text mb-3">@Localizer["AuditorScopeHint"]</div>
+                            </div>
+                        </div>
                         <div class="col-md-4">
                             <div class="mb-3 form-check">
                                 <input asp-for="IsActive" class="form-check-input" checked />
@@ -126,6 +140,13 @@
             hidePassword: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Localizer["HidePassword"].Value))
         };
         $(document).ready(function() {
+            // The audit period only applies to auditors
+            function toggleAuditPeriod() {
+                $('#auditPeriod').toggle($('#IsAuditor').is(':checked'));
+            }
+            $('#IsAuditor').on('change', toggleAuditPeriod);
+            toggleAuditPeriod();
+
             $('#password').on('input', function() {
                 var password = $(this).val();
 

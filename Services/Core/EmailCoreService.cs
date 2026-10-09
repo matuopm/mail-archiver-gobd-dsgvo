@@ -73,6 +73,30 @@ namespace MailArchiver.Services.Core
             sortBy = CanonicalizeSortBy(sortBy);
             sortOrder = CanonicalizeSortOrder(sortOrder);
 
+            // The optimized search uses raw SQL, which bypasses the auditor query filters
+            // of the DbContext. Narrow mailboxes and period to the auditor scope here.
+            if (_context.ScopeActive)
+            {
+                if (_context.ScopeLimitsAccounts)
+                {
+                    allowedAccountIds = allowedAccountIds == null
+                        ? new List<int>(_context.ScopeAccountIds)
+                        : allowedAccountIds.Intersect(_context.ScopeAccountIds).ToList();
+                }
+                if (_context.ScopeHasFrom && (!fromDate.HasValue || fromDate.Value < _context.ScopeFrom))
+                {
+                    fromDate = _context.ScopeFrom;
+                }
+                if (_context.ScopeHasTo)
+                {
+                    var scopeTo = _context.ScopeToExclusive.AddDays(-1);
+                    if (!toDate.HasValue || toDate.Value.Date > scopeTo)
+                    {
+                        toDate = scopeTo;
+                    }
+                }
+            }
+
             try
             {
                 return await SearchEmailsOptimizedAsync(searchTerm, fromDate, toDate, accountId, folderName, isOutgoing, skip, take, allowedAccountIds, sortBy, sortOrder);
