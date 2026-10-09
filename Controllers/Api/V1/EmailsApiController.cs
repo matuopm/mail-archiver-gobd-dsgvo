@@ -4,6 +4,7 @@ using MailArchiver.Models;
 using MailArchiver.Models.Api;
 using MailArchiver.Services;
 using MailArchiver.Services.Core;
+using MailArchiver.Services.Shared;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -95,7 +96,7 @@ public class EmailsApiController : ApiControllerBase
         await _accessLogService.LogAccessAsync(
             CurrentUsername,
             AccessLogType.Search,
-            searchParameters: BuildSearchSummary(q, from, to, accountId, folder, direction, page, pageSize, sortBy, sortOrder));
+            searchParameters: LogText.Event("ApiSearch", BuildSearchSummary(q, from, to, accountId, folder, direction, page, pageSize, sortBy, sortOrder)));
 
         return Ok(result);
     }
@@ -118,7 +119,8 @@ public class EmailsApiController : ApiControllerBase
             AccessLogType.Open,
             emailId: email.Id,
             emailSubject: Truncate(email.Subject, 255),
-            emailFrom: Truncate(email.From, 255));
+            emailFrom: Truncate(email.From, 255),
+            searchParameters: LogText.Event("ApiAccess"));
 
         return Ok(EmailDetailDto.FromEntity(email));
     }
@@ -142,7 +144,8 @@ public class EmailsApiController : ApiControllerBase
             return NotFound();
         }
 
-        await _accessLogService.LogAccessAsync(CurrentUsername, AccessLogType.Download, emailId: id);
+        await _accessLogService.LogAccessAsync(CurrentUsername, AccessLogType.Download, emailId: id,
+            searchParameters: LogText.Event("ApiAccess"));
 
         return File(att.Content, att.ContentType, att.FileName);
     }

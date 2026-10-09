@@ -3621,4 +3621,16 @@
   <data name="Log_AccessLogChainBroken" xml:space="preserve">
     <value>Protokoll geprüft: beschädigt ab Eintrag Nr. {0}. Die {1} Einträge davor sind unverändert; Prüfwert des letzten unveränderten Eintrags: {2}</value>
   </data>
+  <data name="Log_ApiSearch" xml:space="preserve">
+    <value>Über REST-API: {0}</value>
+  </data>
+  <data name="Log_ApiAccess" xml:space="preserve">
+    <value>Über REST-API</value>
+  </data>
+  <data name="Log_McpSearch" xml:space="preserve">
+    <value>Über MCP (KI-Agent): {0}</value>
+  </data>
+  <data name="Log_McpAccess" xml:space="preserve">
+    <value>Über MCP (KI-Agent)</value>
+  </data>
 </root>
