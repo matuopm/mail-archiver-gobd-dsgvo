@@ -3607,7 +3607,7 @@
     <value>Prüfer (nur Lesen)</value>
   </data>
   <data name="AuditorRoleDescription" xml:space="preserve">
-    <value>Darf die E-Mails aller Postfächer durchsuchen, öffnen und herunterladen und das gesamte Zugriffsprotokoll lesen, z. B. für einen Betriebsprüfer. Kann nichts ändern, wiederherstellen oder löschen.</value>
+    <value>Darf die E-Mails aller Postfächer (oder nur der zugeordneten und eines Prüfzeitraums) durchsuchen, öffnen und herunterladen und das Zugriffsprotokoll lesen, z. B. für einen Betriebsprüfer. Kann nichts ändern, wiederherstellen oder löschen.</value>
   </data>
   <data name="AuditorRoleExclusive" xml:space="preserve">
     <value>Ein Prüfer kann nicht gleichzeitig Admin sein oder die Selbstverwaltung haben.</value>
@@ -3620,5 +3620,29 @@
   </data>
   <data name="Log_AccessLogChainBroken" xml:space="preserve">
     <value>Protokoll geprüft: beschädigt ab Eintrag Nr. {0}. Die {1} Einträge davor sind unverändert; Prüfwert des letzten unveränderten Eintrags: {2}</value>
+  </data>
+  <data name="AuditFromDate" xml:space="preserve">
+    <value>Prüfzeitraum von</value>
+  </data>
+  <data name="AuditToDate" xml:space="preserve">
+    <value>Prüfzeitraum bis</value>
+  </data>
+  <data name="AuditPeriodInvalid" xml:space="preserve">
+    <value>Das Ende des Prüfzeitraums darf nicht vor seinem Beginn liegen.</value>
+  </data>
+  <data name="AuditorScopeHint" xml:space="preserve">
+    <value>Nur für Prüfer, beides optional: begrenzt den Prüfer auf E-Mails, die in diesem Zeitraum gesendet wurden. Um ihn auf bestimmte Postfächer zu begrenzen, diese über „zuweisen“ zuordnen; ein Prüfer ohne zugeordnete Postfächer sieht alle. Ein begrenzter Prüfer sieht im Protokoll nur Einträge zu diesen E-Mails und Postfächern sowie seine eigenen.</value>
+  </data>
+  <data name="Log_ApiSearch" xml:space="preserve">
+    <value>Über REST-API: {0}</value>
+  </data>
+  <data name="Log_ApiAccess" xml:space="preserve">
+    <value>Über REST-API</value>
+  </data>
+  <data name="Log_McpSearch" xml:space="preserve">
+    <value>Über MCP (KI-Agent): {0}</value>
+  </data>
+  <data name="Log_McpAccess" xml:space="preserve">
+    <value>Über MCP (KI-Agent)</value>
   </data>
 </root>

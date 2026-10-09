@@ -25,6 +25,12 @@ namespace MailArchiver.Models
         // Auditor (e.g. tax auditor): may read all mail accounts, changes nothing
         [Required]
         public bool IsAuditor { get; set; } = false;
+
+        // Optional audit period of an auditor: only emails sent within it are visible
+        // (dates inclusive). The mailboxes of an auditor are limited by assigning them;
+        // an auditor without assignments sees every mailbox.
+        public DateTime? AuditFromDate { get; set; }
+        public DateTime? AuditToDate { get; set; }
         
         public bool IsActive { get; set; } = true;
         

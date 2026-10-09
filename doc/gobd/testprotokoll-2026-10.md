@@ -4,7 +4,7 @@ Zurück: [Index](README.md) · Getestet: Schritt 1 der [Roadmap](roadmap.md), Te
 
 **Gegenstand:** Branch `feature/original-eml`, Commit `517e8bf` (PR #1 im Fork).
 **Umgebung:** Teststack `mailarchiver-gobd-test` auf dem Testserver, eigene Datenbank `MailArchiverTest` (PostgreSQL 17), Port 5099, getrennt von der produktiven Instanz. Ein echtes Postfach mit 188 Mails, ohne Löschregeln.
-**Durchführung:** Projektinhaber im Terminal des Servers, Skripte unter `\Testserver\coding\mail-archiver-gobd-test\tests`.
+**Durchführung:** der Projektinhaber im Server-Terminal, Skripte unter `\Testserver\coding\mail-archiver-gobd-test\tests`.
 
 ## Ergebnisse
 
@@ -95,6 +95,25 @@ Nicht bestätigt: ob die Kombination Prüfer + Admin beim Anlegen abgelehnt wird
 Nicht geprüft bei 13: MBOX-Import, Import über die Kommandozeile, zweiter Import derselben Datei.
 
 Damit ist belegt, was zuvor nur aus dem Code abgeleitet war: Bei einer frischen Installation bekommt jede vorhandene Mail beim ersten Abruf ihr Original ([Architekturentscheidungen](architekturentscheidungen.md) E8).
+
+## Sechster Durchgang (08. und 09.10.2026): API-Zugriffe, Prüfer begrenzen, Hash nachrechnen
+
+**Gegenstand:** PR #11 (API-Zugriffe im Protokoll, Export) und PR #12 (Prüfer begrenzen), gemeinsam Stand `2aad818`, später im Hauptzweig (`982296b`). Frische Instanz aus der Installationsvorlage, gehärtete Datenbank, PostgreSQL 17, REST-API und MCP eingeschaltet.
+
+| # | Prüfung | Erwartet | Ergebnis |
+|---|---|---|---|
+| 14 | REST-API mit Schlüssel: Konten, Suche, Mail öffnen; ohne gültigen Schlüssel | Daten bzw. 401 | bestanden |
+| 14 | Zugriffsprotokoll nach API-Aufrufen | Suche und Öffnen mit „Über REST-API“, Benutzer = Schlüsselinhaber | bestanden |
+| 14 | Prüfdaten-Export mit `accesslog.csv` | Tabelle vorhanden, in `INDEX.XML` beschrieben, Kette lückenlos | bestanden (7 Zeilen) |
+| 15 | Prüfer mit Zeitraum 01.–30.09.2026: Archivliste, Ordnerbaum, Dashboard | nur September (49 Mails) | bestanden |
+| 15 | Direktaufruf einer Mail außerhalb des Zeitraums | 404 | bestanden |
+| 15 | API mit Schlüssel des Prüfers: Suche und Mail außerhalb | 49 Treffer, 404 | bestanden |
+| 16 | Prüfzeitraum schon beim Anlegen, „bis“ vor „von“, Administrator ohne Zeitraumfelder | Felder erscheinen, Eingabe abgelehnt | bestanden |
+| 16 | Export: Hash jeder Zeile aus `HashInput` nachgerechnet | alle stimmen | bestanden (24 von 24) |
+
+Während des Tests geklärt: Ein abgelaufener oder im falschen Konto angelegter Schlüssel wird als „ungültig“ abgewiesen (Fehlbedienung, kein Fehler im Programm).
+
+Nicht in der Instanz geprüft: MCP mit Prüferschlüssel (nur durch Tests des Code-Threads), Export ausgewählter Mails durch einen begrenzten Prüfer, Zuordnung einzelner Postfächer (nur eines vorhanden), Microsoft-365-Konten (PR #13, ungetestet, nicht im Hauptzweig).
 
 ## Befund
 

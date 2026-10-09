@@ -19,7 +19,7 @@ Zurück: [Index](README.md) · Gegenstück: [GoBD-Anforderungen](gobd-anforderun
 
 ## Zugriffsschutz (Art. 32)
 
-- Rollen nach dem Need-to-know-Prinzip: Nutzer sieht nur zugewiesene Postfächer, Admin verwaltet, Prüfer liest nur. Die Prüfer-Rolle im Fork sieht alle Postfächer und Zeiträume; eine Begrenzung ist nicht gebaut ([Architekturentscheidungen](architekturentscheidungen.md) E12).
+- Rollen nach dem Need-to-know-Prinzip: Nutzer sieht nur zugewiesene Postfächer, Admin verwaltet, Prüfer liest nur. Die Prüfer-Rolle im Fork sieht ohne Einstellung alle Postfächer und Zeiträume; sie lässt sich auf Postfächer und einen Prüfzeitraum begrenzen (PR #12, getestet am 09.10.2026, im Hauptzweig; [Architekturentscheidungen](architekturentscheidungen.md) E12).
 - Zwei-Faktor-Anmeldung für privilegierte Konten.
 - Jeder Zugriff auf Inhalte wird protokolliert; das Protokoll selbst ist geschützt (Schritt 3 der [Roadmap](roadmap.md)).
 - Verschlüsselung bei Transport und Ablage, getestete Backups.

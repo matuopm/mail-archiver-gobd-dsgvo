@@ -108,6 +108,11 @@ namespace MailArchiver.Controllers
                 ModelState.AddModelError("IsAuditor", _localizer["AuditorRoleExclusive"]);
             }
 
+            if (model.AuditFromDate.HasValue && model.AuditToDate.HasValue && model.AuditFromDate > model.AuditToDate)
+            {
+                ModelState.AddModelError("AuditToDate", _localizer["AuditPeriodInvalid"]);
+            }
+
             if (!ModelState.IsValid)
             {
                 _logger.LogWarning("ModelState is invalid. Errors: {Errors}",
@@ -131,6 +136,8 @@ namespace MailArchiver.Controllers
                 {
                     newUser.IsSelfManager = model.IsSelfManager;
                     newUser.IsAuditor = model.IsAuditor;
+                    newUser.AuditFromDate = model.IsAuditor ? model.AuditFromDate?.Date : null;
+                    newUser.AuditToDate = model.IsAuditor ? model.AuditToDate?.Date : null;
                     await _userService.UpdateUserAsync(newUser);
                 }
 
@@ -183,6 +190,8 @@ namespace MailArchiver.Controllers
                 IsAdmin = user.IsAdmin,
                 IsSelfManager = user.IsSelfManager,
                 IsAuditor = user.IsAuditor,
+                AuditFromDate = user.AuditFromDate,
+                AuditToDate = user.AuditToDate,
                 IsActive = user.IsActive
             };
 
@@ -259,6 +268,11 @@ namespace MailArchiver.Controllers
                 ModelState.AddModelError("IsAuditor", _localizer["AuditorRoleExclusive"]);
             }
 
+            if (model.AuditFromDate.HasValue && model.AuditToDate.HasValue && model.AuditFromDate > model.AuditToDate)
+            {
+                ModelState.AddModelError("AuditToDate", _localizer["AuditPeriodInvalid"]);
+            }
+
             if (ModelState.IsValid)
             {
                 try
@@ -284,6 +298,9 @@ namespace MailArchiver.Controllers
                     existingUser.IsAdmin = model.IsAdmin;
                     existingUser.IsSelfManager = model.IsSelfManager;
                     existingUser.IsAuditor = model.IsAuditor;
+                    // The audit period only applies to auditors
+                    existingUser.AuditFromDate = model.IsAuditor ? model.AuditFromDate?.Date : null;
+                    existingUser.AuditToDate = model.IsAuditor ? model.AuditToDate?.Date : null;
                     existingUser.IsActive = model.IsActive;
 
                     // SECURITY: When activating an OIDC user, also clear the RequiresApproval flag

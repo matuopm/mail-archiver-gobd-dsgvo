@@ -4,6 +4,7 @@ using MailArchiver.Models;
 using MailArchiver.Models.Api;
 using MailArchiver.Services;
 using MailArchiver.Services.Core;
+using MailArchiver.Services.Shared;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -94,7 +95,7 @@ public class EmailsMcpTool : McpToolBase
         await _accessLogService.LogAccessAsync(
             CurrentUsername,
             AccessLogType.Search,
-            searchParameters: BuildSearchSummary(q, from, to, accountId, folder, direction, page, pageSize, sortBy, sortOrder));
+            searchParameters: LogText.Event("McpSearch", BuildSearchSummary(q, from, to, accountId, folder, direction, page, pageSize, sortBy, sortOrder)));
 
         return result;
     }
@@ -119,7 +120,8 @@ public class EmailsMcpTool : McpToolBase
             AccessLogType.Open,
             emailId: email.Id,
             emailSubject: Truncate(email.Subject, 255),
-            emailFrom: Truncate(email.From, 255));
+            emailFrom: Truncate(email.From, 255),
+            searchParameters: LogText.Event("McpAccess"));
 
         return EmailDetailDto.FromEntity(email);
     }
@@ -153,7 +155,8 @@ public class EmailsMcpTool : McpToolBase
                 $"Attachment {attachmentId} is {bytes.LongLength} bytes which exceeds the configured limit of {_options.MaxAttachmentBytes} bytes.");
         }
 
-        await _accessLogService.LogAccessAsync(CurrentUsername, AccessLogType.Download, emailId: id);
+        await _accessLogService.LogAccessAsync(CurrentUsername, AccessLogType.Download, emailId: id,
+            searchParameters: LogText.Event("McpAccess"));
 
         return new AttachmentDownloadDto
         {

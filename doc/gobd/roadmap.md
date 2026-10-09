@@ -4,11 +4,11 @@ Zurück: [Index](README.md) · Begründungen: [Architekturentscheidungen](archit
 
 | # | Schritt | Inhalt | Entscheidung | Status |
 |---|---|---|---|---|
-| 1 | Hash + EML | Original-EML und SHA-256 in `archive_worm`, `ContentHash` befüllen; immer aktiv, kein Schalter; kein Nachrüsten alter Archive | E1, E5, E7, E8 | Speicher (PR #1) und Speichern beim IMAP-Sync (PR #2) fertig und getestet ([Testprotokoll 2026-10-05](testprotokoll-2026-10.md)); Schalter entfernt, Löschsperre fest, Löschknöpfe ausgebaut (PR #2, getestet); Datei-Import mit Original gebaut, getestet und im Hauptzweig (PR #6, Commit `ad5cc51`); offen: Microsoft 365 |
+| 1 | Hash + EML | Original-EML und SHA-256 in `archive_worm`, `ContentHash` befüllen; immer aktiv, kein Schalter; kein Nachrüsten alter Archive | E1, E5, E7, E8 | Speicher (PR #1) und Speichern beim IMAP-Sync (PR #2) fertig und getestet ([Testprotokoll 2026-10-05](testprotokoll-2026-10.md)); Schalter entfernt, Löschsperre fest, Löschknöpfe ausgebaut (PR #2, getestet); Datei-Import mit Original gebaut, getestet und im Hauptzweig (PR #6, Commit `ad5cc51`); offen: Microsoft 365 (PR #13 gebaut, ungetestet, nicht im Hauptzweig) |
 | 2 | Sperre härten | App-Rolle nur INSERT/SELECT, Trigger, Kontolöschung nicht mehr an der Sperre vorbei | E2, E3, E4 | gebaut und getestet (PR #1 bis #3); Härtung ist ein Schritt für den Administrator (`doc/WormStorage.md`) |
 | 3 | Protokoll schützen | `AccessLogs` im geschützten Schema, nur anfügbar, SHA-256-Verkettung, Knopf „Protokoll prüfen“ | E11 | gebaut und getestet (PR #4, [Testprotokoll 2026-10-05](testprotokoll-2026-10.md)) |
 | 4 | Frist und Löschlauf | Einheitlich 8 Jahre ab Jahresende, Verlängerung bei Prüfung, automatisches Löschen nach Ablauf, kein manuelles Löschen | E4, E9, E10 | gebaut und getestet (PR #3, [Testprotokoll 2026-10-05](testprotokoll-2026-10.md)) |
-| 5 | Prüfer-Rolle | Nur lesend, sieht alle Postfächer, kein Wiederherstellen, keine Verwaltung (Z1) | E12 | gebaut und getestet (PR #5, [Testprotokoll 2026-10-05](testprotokoll-2026-10.md)); nicht gebaut: Begrenzung auf Zeitraum oder Postfächer |
+| 5 | Prüfer-Rolle | Nur lesend, sieht alle Postfächer, kein Wiederherstellen, keine Verwaltung (Z1) | E12 | gebaut und getestet (PR #5, [Testprotokoll 2026-10-05](testprotokoll-2026-10.md)); Begrenzung auf Postfächer und Zeitraum gebaut, getestet und im Hauptzweig (PR #12, 09.10.2026) |
 | ∥ | Muster-Verfahrensdoku | Muster zum Ausfüllen je Kunde: [Verfahrensdokumentation](verfahrensdokumentation-muster.md) | – | Entwurf vom 06.10.2026, rechtlich nicht geprüft |
 
 ## Ideen für später

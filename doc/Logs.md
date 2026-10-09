@@ -120,6 +120,6 @@ they were written; the protection covers them from that point on.
 
 ## 📤 Audit Data Export
 
-Admins can open the dedicated [Audit Data Export](AuditExport.md) page directly from the Logs page. It creates tabular mass data packages (INDEX.XML + CSV) from the archive for external audit tools. Every export run writes two access log entries of the type **Audit Data Export** (start and result), which are listed and filterable on the Logs page like all other entries.
+Admins can open the dedicated [Audit Data Export](AuditExport.md) page directly from the Logs page. It creates tabular mass data packages (INDEX.XML + CSV) from the archive for external audit tools. The package always contains the access log of the export period as `accesslog.csv`, in German, with the hash chain columns. Every export run writes two access log entries of the type **Audit Data Export** (start and result), which are listed and filterable on the Logs page like all other entries.
 
 For details see the [Audit Data Export guide](AuditExport.md).

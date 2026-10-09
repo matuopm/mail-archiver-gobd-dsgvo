@@ -470,6 +470,12 @@ web UI (visible under **Logs**), attributed to the key's owning user:
 | Get message | `Open` |
 | Download attachment | `Download` |
 
+Each entry is marked "Via REST API" (German "Über REST-API") in its details, so API
+access can be told apart from the web UI. The entries go into the write-once, hash-chained
+log (see [Logs](Logs.md#-protection-against-later-changes)). An auditor's API keys read all
+mail accounts like the auditor does in the web UI; the API has no writing endpoints, and API
+keys are accepted only under `/api/` and `/mcp`.
+
 ## OpenAPI and Swagger UI
 
 When the API is enabled and `Api:EnableSwaggerUi=true`:

@@ -71,10 +71,12 @@ Zurück: [Index](README.md) · Ausgangslage: [Ist-Stand Mail Archiver](ist-stand
 
 - Eigene Rolle „Prüfer (nur Lesen)“: sieht alle Postfächer ohne Zuweisung, darf suchen, öffnen, als EML exportieren und das Protokoll prüfen. Kein Wiederherstellen ins Postfach, keine Benutzer-, Konten- oder Aufbewahrungsverwaltung. Nicht mit Admin kombinierbar.
 - Passt zu dem Anwendungsfall des Projektinhabers: Admin bindet alle Postfächer ein, ein Lesebenutzer schaut hinein.
-- **Nicht gebaut:** Begrenzung auf Zeitraum oder einzelne Postfächer. Für eine Betriebsprüfung, die nur bestimmte Jahre betrifft, wäre das datenschutzrechtlich die sauberere Lösung.
+- **Optional begrenzbar** (PR #12, im Hauptzweig; getestet am 09.10.2026 in Liste, Dashboard, Direktaufruf und API; Zeitraum auch schon beim Anlegen einstellbar): Der Prüfer lässt sich auf zugewiesene Postfächer und einen Prüfzeitraum (von/bis) einschränken. Ohne Angabe sieht er wie bisher alles. Für eine Betriebsprüfung, die nur bestimmte Jahre betrifft, ist das datenschutzrechtlich die sauberere Lösung.
 
 ## Offen
 
-- Prüfer-Rolle auf Zeitraum oder Postfächer begrenzen (E12).
-- Zugriffsprotokoll im Z3-Export mit fester Sprache.
+- Gebaut, getestet und im Hauptzweig (09.10.2026): Zugriffe über REST-API im Protokoll mit Herkunftshinweis (MCP nur vom Code-Thread getestet), Zugriffsprotokoll als `accesslog.csv` im Z3-Export, Texte dort immer deutsch, mit Spalte `HashInput`, aus der sich jeder Hash ohne Datenbankzugang nachrechnen lässt (PR #11); Prüfer auf Postfächer und Zeitraum begrenzbar (PR #12).
+- Bekannte Eigenschaft: Das Dashboard eines begrenzten Prüfers zeigt Gesamtwerte zu Datenbank- und Speichergröße, keine Mailinhalte (vom Projektinhaber so belassen).
+- Abgewiesene API-Aufrufe (ungültiger Schlüssel) werden bewusst nicht im Zugriffsprotokoll festgehalten, sonst könnte jeder ohne Schlüssel das unlöschbare Protokoll füllen; sie stehen im Anwendungslog.
+- Microsoft-365-Konten speichern im Hauptzweig noch kein Original. Die Umsetzung (PR #13, Original über die Graph-Schnittstelle) ist gebaut, aber ungetestet, weil kein Microsoft-365-Postfach zur Verfügung stand; sie ist deshalb nicht übernommen.
 - Restrisiko Datenbank-Superuser: organisatorisch regeln (Vier-Augen-Prinzip, getrennte Zugangsdaten) oder über E6.

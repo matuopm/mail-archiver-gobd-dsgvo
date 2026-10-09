@@ -33,10 +33,13 @@ Der Fork ist bewusst ein reiner GoBD-Modus ohne Schalter. Wer diese Einschränku
 - Das Protokoll kann nur ergänzt, nicht geändert oder gelöscht werden.
 - Jeder Eintrag ist per SHA-256-Kette mit dem vorherigen verbunden. Der Knopf **Protokoll prüfen** zeigt, ob die Kette lückenlos ist; auch die Prüfung selbst wird protokolliert.
 - Protokolltexte erscheinen in der gewählten Sprache (Deutsch und Englisch vollständig).
+- Zugriffe über die REST-API und über MCP (KI-Agenten) stehen mit Herkunftshinweis im Protokoll. Abgewiesene Aufrufe ohne gültigen Schlüssel kommen bewusst nicht hinein, sonst könnte jeder das unlöschbare Protokoll füllen.
+- Der Export für die Betriebsprüfung (Z3) enthält das Zugriffsprotokoll als `accesslog.csv`. Jede Zeile lässt sich ohne Datenbankzugang nachrechnen: SHA-256 über die Spalte `HashInput` ergibt `Hash` ([doc/AuditExport.md](doc/AuditExport.md)).
 - Details: [doc/Logs.md](doc/Logs.md)
 
 ### Rolle „Prüfer (nur Lesen)“
 - Für Betriebsprüfer oder externe Prüfer: sieht alle Postfächer und das gesamte Protokoll, kann suchen, öffnen und exportieren.
+- Optional auf bestimmte Postfächer und einen Prüfzeitraum begrenzbar, der Zeitraum schon beim Anlegen. Das gilt auch für Export, REST-API und MCP. Datenbankgröße und Speicher je Postfach zeigt das Dashboard auch dann als Gesamtwerte; Mailinhalte außerhalb der Begrenzung sieht der Prüfer nicht.
 - Kann nichts ändern, löschen, wiederherstellen oder importieren. Der Server lehnt alles ab, was nicht ausdrücklich als lesend freigegeben ist.
 - Nicht mit Administrator kombinierbar.
 - Details: [doc/UserManagement.md](doc/UserManagement.md)
