@@ -23,7 +23,7 @@ Die Dateien sind normale Markdown-Texte und lassen sich direkt hier auf GitHub l
 
 ## Stand in einem Satz
 
-Im Fork gebaut und getestet ([Testprotokoll 2026-10-05](testprotokoll-2026-10.md)): Original-EML mit Hash in einem schreibgeschützten Speicher, feste Löschsperre ohne manuelles Löschen, einheitlich 8 Jahre Frist mit automatischem Löschlauf und Löschpause, verkettetes Zugriffsprotokoll, Prüfer-Rolle. Seit 06.10.2026 im Hauptzweig des Forks. Installationsvorlage als Neuinstallation getestet. Datei-Import mit Original getestet und seit 06.10.2026 im Hauptzweig (PR #6). Offen: Microsoft 365 ohne Original ([Roadmap](roadmap.md)).
+Im Fork gebaut und getestet ([Testprotokoll 2026-10-05](testprotokoll-2026-10.md)): Original-EML mit Hash in einem schreibgeschützten Speicher, feste Löschsperre ohne manuelles Löschen, einheitlich 8 Jahre Frist mit automatischem Löschlauf und Löschpause, verkettetes Zugriffsprotokoll mit nachrechenbarem Export, API-Zugriffe im Protokoll, Prüfer-Rolle, begrenzbar auf Zeitraum und Postfächer. Alles im Hauptzweig des Forks (Stand 09.10.2026). Installationsvorlage als Neuinstallation getestet. Datei-Import mit Original getestet und seit 06.10.2026 im Hauptzweig (PR #6). Offen: Microsoft 365 ohne Original, Umsetzung gebaut aber ungetestet und nicht übernommen ([Roadmap](roadmap.md)).
 
 ## Spannungsfeld
 
