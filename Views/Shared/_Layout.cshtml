@@ -150,6 +150,10 @@
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
             }
+            @if (AuthService.IsCurrentUserAdmin(Context) || AuthService.IsCurrentUserAuditor(Context))
+            {
+                @await Component.InvokeAsync("RetentionHoldBanner", new { showLink = AuthService.IsCurrentUserAdmin(Context) })
+            }
             @RenderBody()
         </main>
     </div>
