@@ -3631,4 +3631,10 @@
   <data name="Log_McpAccess" xml:space="preserve">
     <value>Via MCP (AI agent)</value>
   </data>
+  <data name="RetentionHoldBannerSince" xml:space="preserve">
+    <value>since</value>
+  </data>
+  <data name="RetentionPausedWaiting" xml:space="preserve">
+    <value>{0} emails have passed their retention period and will be deleted once the pause ends.</value>
+  </data>
 </root>

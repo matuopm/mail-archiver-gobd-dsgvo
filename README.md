@@ -27,7 +27,7 @@ Der Fork ist bewusst ein reiner GoBD-Modus ohne Schalter. Wer diese Einschränku
 ### 8 Jahre Aufbewahrung mit automatischem Löschlauf
 - Einheitliche Frist für alle E-Mails: 8 Jahre ab Ende des Jahres, in dem die E-Mail archiviert wurde.
 - Ein täglicher Löschlauf entfernt E-Mails nach Ablauf der Frist samt Original und protokolliert das.
-- Auf der Seite **Aufbewahrung** können Administratoren das Löschen pausieren, etwa während einer Betriebsprüfung (§ 147 Abs. 3 AO). Beginn und Ende einer Pause werden protokolliert.
+- Auf der Seite **Aufbewahrung** können Administratoren das Löschen pausieren, etwa während einer Betriebsprüfung (§ 147 Abs. 3 AO). Beginn und Ende einer Pause werden protokolliert. Solange die Pause läuft, sehen Administratoren und Prüfer oben auf jeder Seite einen Hinweis, damit sie nach der Prüfung nicht vergessen wird.
 
 ### Geschütztes Zugriffsprotokoll
 - Das Protokoll kann nur ergänzt, nicht geändert oder gelöscht werden.

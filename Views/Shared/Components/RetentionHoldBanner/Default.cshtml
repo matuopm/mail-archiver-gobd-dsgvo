@@ -1,0 +1,18 @@
+@model MailArchiver.Models.RetentionHold
+@inject Microsoft.Extensions.Localization.IStringLocalizer<MailArchiver.SharedResource> Localizer
+@{
+    var showLink = ViewBag.ShowLink as bool? ?? false;
+}
+<div class="alert alert-warning d-flex align-items-center" role="status">
+    <i class="bi bi-pause-circle-fill me-2"></i>
+    <div class="flex-grow-1">
+        <strong>@Localizer["RetentionPausedTitle"]</strong>
+        @Localizer["RetentionHoldBannerSince"]
+        <span class="utc-timestamp" data-utc-time="@Model.StartedAt.ToString("yyyy-MM-ddTHH:mm:ss")">@Model.StartedAt.ToString("g")</span>:
+        @Model.Reason
+    </div>
+    @if (showLink)
+    {
+        <a asp-controller="Retention" asp-action="Index" class="btn btn-sm btn-outline-dark ms-3">@Localizer["Retention"]</a>
+    }
+</div>

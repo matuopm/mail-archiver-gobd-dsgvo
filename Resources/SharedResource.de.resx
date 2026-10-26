@@ -3645,4 +3645,10 @@
   <data name="Log_McpAccess" xml:space="preserve">
     <value>Über MCP (KI-Agent)</value>
   </data>
+  <data name="RetentionHoldBannerSince" xml:space="preserve">
+    <value>seit</value>
+  </data>
+  <data name="RetentionPausedWaiting" xml:space="preserve">
+    <value>{0} E-Mails sind abgelaufen und werden nach Ende der Pause gelöscht.</value>
+  </data>
 </root>
