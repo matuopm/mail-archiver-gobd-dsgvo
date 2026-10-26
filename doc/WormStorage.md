@@ -5,8 +5,8 @@
 ## 📋 Overview
 
 `ArchivedEmails` holds the parsed form of a mail: subject, body, addresses, attachments.
-That form is what search and display need, but it is not the message as it was delivered,
-and an export rebuilds a new `.eml` from it. Retention rules such as the German GoBD expect
+That form is what search and display need, but it is not the message as it was delivered;
+upstream, an export rebuilds a new `.eml` from it. Retention rules such as the German GoBD expect
 electronically received documents to be kept in the form they were received in and to be
 protected against unnoticed change.
 

@@ -794,6 +794,11 @@ namespace MailArchiver.Services.Core
                     throw new InvalidOperationException($"Email with ID {parameters.EmailId.Value} not found");
                 }
 
+                // The stored original byte for byte; rebuilt only when none is stored
+                var original = await OriginalMessage.LoadAsync(_context, email.Id);
+                if (original != null)
+                    return original;
+
                 await ExportSingleEmailAsEml(email, ms);
             }
 
