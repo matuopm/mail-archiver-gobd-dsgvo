@@ -72,7 +72,7 @@ Wichtig:
 ## ⚠️ Grenzen
 
 - **Microsoft 365:** E-Mails aus Microsoft-365-Postfächern werden ohne Original gespeichert. Sie werden auch nicht automatisch gelöscht.
-- **Datensicherung:** Sicherung und Rücksicherung der gehärteten Datenbank sind nicht getestet. Vor dem Ernstfall einmal auf einem Testsystem durchspielen.
+- **Datensicherung:** Sicherung und Rücksicherung der gehärteten Datenbank sind getestet, aber nur auf PostgreSQL 16 ohne Docker ([deploy/LIESMICH.md](deploy/LIESMICH.md)). Vor dem Ernstfall einmal auf dem eigenen System durchspielen.
 - **Datenbank-Superuser:** Wer Superuser-Rechte auf der Datenbank hat, kann den Schutz umgehen. Die Protokollkette macht Änderungen am Protokoll sichtbar, verhindert sie aber nicht.
 - **Keine Rechtsberatung:** Die Software unterstützt eine GoBD-konforme Archivierung, ersetzt aber weder die eigene Verfahrensdokumentation noch die Abstimmung mit Steuerberatung oder Datenschutzbeauftragten.
 
