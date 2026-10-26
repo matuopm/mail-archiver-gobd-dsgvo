@@ -1,6 +1,6 @@
 # Mail-Archiver GoBD – Installationsvorlage
 
-Docker-Compose-Vorlage für eine Neuinstallation mit gehärteter Datenbank. Am 06.10.2026 als Neuinstallation getestet (Schritte 2, 3 und 5 bestanden, 191 von 191 Mails mit Original). Datensicherung und Rücksicherung sind nicht getestet.
+Docker-Compose-Vorlage für eine Neuinstallation mit gehärteter Datenbank. Am 06.10.2026 als Neuinstallation getestet (Schritte 2, 3 und 5 bestanden, 191 von 191 Mails mit Original). Sicherung und Rücksicherung am 26.10.2026 getestet (siehe unten).
 
 ## Was die Vorlage anders macht als das Original-Projekt
 
@@ -39,11 +39,27 @@ docker exec mailarchiver-gobd-db sh -c 'pg_dump -U "$POSTGRES_USER" -Fc "$POSTGR
 ```
 Das Volume `keys` mitsichern (Anmelde-Schlüssel der Weboberfläche).
 
-Für eine Rücksicherung in eine leere Datenbank müssen die Rollen `mailarchiver_app` und `mailarchiver_worm_owner` vorher existieren, sonst gehen Besitzer und Rechte verloren. Auf einem neuen Volume legt `initdb/01-app-rolle.sh` die Anwendungsrolle an, die Besitzerrolle fehlt dann noch:
-```sql
-CREATE ROLE mailarchiver_worm_owner NOLOGIN;
-```
-Danach `pg_restore` als Datenbank-Verwalter. Dieser Ablauf ist **nicht getestet**: Die Rücksicherung vor dem Ernstfall einmal auf einem Testsystem durchspielen.
+### Rücksicherung
+
+Für eine Rücksicherung in eine leere Datenbank müssen die Rollen `mailarchiver_app` und `mailarchiver_worm_owner` vorher existieren, sonst gehen Besitzer und Rechte verloren. Ablauf auf einem neuen, leeren Volume:
+
+1. Nur die Datenbank starten. Beim ersten Start legt `initdb/01-app-rolle.sh` die Anwendungsrolle und die Erweiterungen an:
+   ```bash
+   docker compose up -d postgres
+   ```
+2. Die Besitzerrolle anlegen:
+   ```bash
+   docker exec mailarchiver-gobd-db sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "CREATE ROLE mailarchiver_worm_owner NOLOGIN;"'
+   ```
+3. Die Sicherung als Datenbank-Verwalter einspielen:
+   ```bash
+   docker exec -i mailarchiver-gobd-db sh -c 'pg_restore -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < sicherung.dump
+   ```
+   Es darf keine Zeile mit `error` erscheinen. `haerten.sql` muss danach **nicht** noch einmal laufen: Besitzer, Rechte und Schutz-Trigger kommen mit der Sicherung zurück.
+4. Das Volume `keys` zurückspielen, dann die App starten: `docker compose up -d`.
+5. Kontrolle wie nach der Inbetriebnahme: Seite „Aufbewahrung“ zeigt dieselbe Zahl E-Mails mit Original, „Protokoll prüfen“ meldet grün.
+
+**Getestet am 26.10.2026** auf PostgreSQL 16 ohne Docker, mit denselben Befehlen und Rollen: 21 E-Mails per MBOX-Import, gehärtet, laufende Löschpause. Nach der Rücksicherung in eine frische Datenbank waren alle Originale mit gleicher Prüfsumme da, die Protokollkette lückenlos, Besitzer, Rechte und Schutz-Trigger unverändert. Ändern und Löschen wurden weiter abgelehnt, die Pause lief weiter, und neue E-Mails und Protokolleinträge ließen sich anfügen.
 
 ## Entfernen
 
