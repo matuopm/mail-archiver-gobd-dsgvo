@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.Graph;
 using Microsoft.Graph.Models;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace MailArchiver.Services.Providers.Graph
@@ -61,12 +62,29 @@ namespace MailArchiver.Services.Providers.Graph
                     return false;
             }
 
+            // The original MIME message, stored write-once with its hash like an IMAP original.
+            // Without it the email is not archived: the exception reaches the sync loop, which
+            // counts it as failed so the next sync tries again.
+            var originalMime = await FetchOriginalMimeAsync(graphClient, account.EmailAddress, message.Id);
+
             // Build and persist the archived email
             try
             {
                 _logger.LogDebug("Archiving new email {MessageId} for account {AccountName}", messageId, account.Name);
 
                 var archivedEmail = await BuildArchivedEmailAsync(graphClient, account, message, messageId, isOutgoing, folderName);
+
+                var sha256 = Convert.ToHexString(SHA256.HashData(originalMime)).ToLowerInvariant();
+                archivedEmail.ContentHash = sha256;
+                archivedEmail.HashCreatedAt = DateTime.UtcNow;
+                _context.ArchivedEmailSources.Add(new ArchivedEmailSource
+                {
+                    ArchivedEmail = archivedEmail,
+                    RawMime = originalMime,
+                    Size = originalMime.Length,
+                    Sha256 = sha256,
+                    Source = ArchivedEmailSourceKinds.Graph
+                });
 
                 _context.ArchivedEmails.Add(archivedEmail);
                 await _context.SaveChangesAsync();
@@ -88,6 +106,25 @@ namespace MailArchiver.Services.Providers.Graph
                     message.Subject, message.From?.EmailAddress?.Address, ex.Message);
                 return false;
             }
+        }
+
+        /// <summary>
+        /// Loads the MIME content of a message (GET /users/{id}/messages/{id}/$value). Exchange
+        /// builds this MIME from its stored message, so it is the message as Microsoft 365 hands
+        /// it out, not necessarily byte for byte what the sending server delivered.
+        /// </summary>
+        private static async Task<byte[]> FetchOriginalMimeAsync(GraphServiceClient graphClient, string userPrincipalName, string? graphMessageId)
+        {
+            if (string.IsNullOrEmpty(graphMessageId))
+                throw new InvalidOperationException("Graph message has no id, the original MIME cannot be loaded.");
+
+            await using var stream = await graphClient.Users[userPrincipalName].Messages[graphMessageId].Content.GetAsync()
+                ?? throw new InvalidOperationException($"Graph returned no MIME content for message {graphMessageId}.");
+            using var buffer = new MemoryStream();
+            await stream.CopyToAsync(buffer);
+            if (buffer.Length == 0)
+                throw new InvalidOperationException($"Graph returned empty MIME content for message {graphMessageId}.");
+            return buffer.ToArray();
         }
 
         /// <summary>

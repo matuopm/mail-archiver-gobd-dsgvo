@@ -41,7 +41,14 @@ The retention period of an imported original also starts at the import, not at t
 the email. An email that already exists in the archive is skipped and gets no second
 original.
 
-Not covered yet: emails archived before this version and Microsoft 365 (Graph) accounts.
+Microsoft 365 accounts store the MIME content Graph returns for each message
+(`GET /users/{id}/messages/{id}/$value`) with origin `graph`. Exchange builds this MIME from
+the message it keeps, so it is the email as Microsoft 365 hands it out, not necessarily byte
+for byte what the sending server delivered (the same applies to IMAP access to Exchange). It
+costs one extra Graph request per new email. If the MIME content cannot be loaded, the email
+is not archived and counts as failed, so the next sync tries again.
+
+Not covered: emails archived before this version.
 
 ### Effect on deleting emails
 
