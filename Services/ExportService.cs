@@ -400,8 +400,9 @@ namespace MailArchiver.Services
                     {
                         job.CurrentEmailSubject = email.Subject;
 
-                        // Create MIME message from archived email
-                        var mimeMessage = await CreateMimeMessageFromArchived(email, dateTimeHelper);
+                        // The stored original byte for byte (rebuilt only when none is stored)
+                        var messageBytes = await OriginalMessage.GetBytesAsync(context, email.Id,
+                            () => CreateMimeMessageFromArchived(email, dateTimeHelper), cancellationToken);
 
                         // Generate safe filename with In/Out indicator
                         var safeSubject = SanitizeFileName(email.Subject);
@@ -412,7 +413,7 @@ namespace MailArchiver.Services
                         // Add to ZIP archive
                         var entry = archive.CreateEntry(entryName);
                         using var entryStream = entry.Open();
-                        await mimeMessage.WriteToAsync(entryStream, cancellationToken);
+                        await entryStream.WriteAsync(messageBytes, cancellationToken);
 
                         job.ProcessedEmails++;
                         processedIds.Add(email.Id);
@@ -531,24 +532,11 @@ namespace MailArchiver.Services
                         var fromLine = CreateMBoxFromLine(email);
                         await writer.WriteLineAsync(fromLine);
 
-                        // Create MIME message and write to mbox
-                        var mimeMessage = await CreateMimeMessageFromArchived(email, dateTimeHelper);
-                        
-                        using var messageStream = new MemoryStream();
-                        await mimeMessage.WriteToAsync(messageStream, cancellationToken);
-                        messageStream.Position = 0;
-
-                        using var messageReader = new StreamReader(messageStream, Encoding.UTF8);
-                        string? line;
-                        while ((line = await messageReader.ReadLineAsync()) != null)
-                        {
-                            // Escape lines that start with "From " (mbox format requirement)
-                            if (line.StartsWith("From "))
-                            {
-                                line = ">" + line;
-                            }
-                            await writer.WriteLineAsync(line);
-                        }
+                        // Write the stored original byte for byte (rebuilt only when none is stored)
+                        var messageBytes = await OriginalMessage.GetBytesAsync(context, email.Id,
+                            () => CreateMimeMessageFromArchived(email, dateTimeHelper), cancellationToken);
+                        await writer.FlushAsync();
+                        await OriginalMessage.WriteMboxBodyAsync(mboxStream, messageBytes, cancellationToken);
 
                         // Add empty line after message
                         await writer.WriteLineAsync();
@@ -647,7 +635,9 @@ namespace MailArchiver.Services
 
                 try
                 {
-                    var mimeMessage = await CreateMimeMessageFromArchived(email, dateTimeHelper);
+                    // The stored original byte for byte (rebuilt only when none is stored)
+                    var messageBytes = await OriginalMessage.GetBytesAsync(context, email.Id,
+                        () => CreateMimeMessageFromArchived(email, dateTimeHelper), cancellationToken);
 
                     var safeSubject = SanitizeFileName(email.Subject);
                     var inOutIndicator = email.IsOutgoing ? "Out" : "In";
@@ -656,7 +646,7 @@ namespace MailArchiver.Services
 
                     var entry = archive.CreateEntry(entryName);
                     using var entryStream = entry.Open();
-                    await mimeMessage.WriteToAsync(entryStream, cancellationToken);
+                    await entryStream.WriteAsync(messageBytes, cancellationToken);
 
                     job.ProcessedEmails++;
                     processedIds.Add(email.Id);
@@ -732,22 +722,11 @@ namespace MailArchiver.Services
                     var fromLine = CreateMBoxFromLine(email);
                     await writer.WriteLineAsync(fromLine);
 
-                    var mimeMessage = await CreateMimeMessageFromArchived(email, dateTimeHelper);
-
-                    using var messageStream = new MemoryStream();
-                    await mimeMessage.WriteToAsync(messageStream, cancellationToken);
-                    messageStream.Position = 0;
-
-                    using var messageReader = new StreamReader(messageStream, Encoding.UTF8);
-                    string? line;
-                    while ((line = await messageReader.ReadLineAsync()) != null)
-                    {
-                        if (line.StartsWith("From "))
-                        {
-                            line = ">" + line;
-                        }
-                        await writer.WriteLineAsync(line);
-                    }
+                    // Write the stored original byte for byte (rebuilt only when none is stored)
+                    var messageBytes = await OriginalMessage.GetBytesAsync(context, email.Id,
+                        () => CreateMimeMessageFromArchived(email, dateTimeHelper), cancellationToken);
+                    await writer.FlushAsync();
+                    await OriginalMessage.WriteMboxBodyAsync(mboxStream, messageBytes, cancellationToken);
 
                     await writer.WriteLineAsync();
 

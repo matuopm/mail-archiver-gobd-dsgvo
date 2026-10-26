@@ -27,6 +27,7 @@ The generated ZIP file is named `audit-export-<timestamp>.zip` and contains:
 | `emails.csv` | One row per archived email in the selected period/mailbox |
 | `attachments.csv` | Optional; one row per attachment of the exported emails |
 | `accesslog.csv` | Always; the access log entries of the selected period |
+| `originals/<Id>.eml` | Always; the unchanged original of each exported email that has one (see `OriginalFile`) |
 
 ### Table `emails.csv`
 
@@ -48,6 +49,12 @@ Columns (no header row; the column names come from `INDEX.XML`, as usual for thi
 | HasAttachments | `1` = with attachments, `0` = without |
 | AttachmentCount | Number of attachments (numeric) |
 | AccountEmail | Email address of the archiving mailbox |
+| OriginalFile | Path of the unchanged original inside the ZIP (`originals/<Id>.eml`); empty if no original is stored |
+| OriginalSha256 | SHA-256 (hex) of that file, as stored at archiving time; empty if no original is stored |
+
+The original is the message byte for byte as it was received or imported, including all
+headers and attachments. Anyone can check it without database access: the SHA-256 of the
+file must equal `OriginalSha256`, for example `sha256sum originals/42.eml`.
 
 ### Table `attachments.csv`
 

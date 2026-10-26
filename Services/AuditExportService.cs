@@ -26,6 +26,7 @@ namespace MailArchiver.Services
         private const string EmailCsvName = "emails.csv";
         private const string AttachmentCsvName = "attachments.csv";
         private const string AccessLogCsvName = "accesslog.csv";
+        private const string OriginalsFolder = "originals";
         private const string IndexXmlName = "INDEX.XML";
         private const string DtdName = "index.dtd";
         private const int BatchSize = 1000;
@@ -341,6 +342,7 @@ namespace MailArchiver.Services
 
                     await WriteDtdEntry(archive);
                     await WriteEmailsCsvAsync(job, context, dateTimeHelper, archive, cancellation.Token);
+                    await WriteOriginalsAsync(job, context, archive, cancellation.Token);
                     if (job.IncludeAttachments)
                     {
                         await WriteAttachmentsCsvAsync(job, context, archive, cancellation.Token);
@@ -555,7 +557,8 @@ namespace MailArchiver.Services
                         e.FolderName,
                         e.HasAttachments,
                         AttachmentCount = e.Attachments.Count,
-                        AccountEmail = context.MailAccounts.Where(a => a.Id == e.MailAccountId).Select(a => a.EmailAddress).FirstOrDefault() ?? string.Empty
+                        AccountEmail = context.MailAccounts.Where(a => a.Id == e.MailAccountId).Select(a => a.EmailAddress).FirstOrDefault() ?? string.Empty,
+                        OriginalSha256 = context.ArchivedEmailSources.Where(s => s.ArchivedEmailId == e.Id).Select(s => s.Sha256).FirstOrDefault()
                     })
                     .Take(BatchSize)
                     .ToListAsync(cancellationToken);
@@ -581,7 +584,9 @@ namespace MailArchiver.Services
                         Csv(email.FolderName),
                         Csv(email.HasAttachments ? "1" : "0"),
                         Csv(email.AttachmentCount.ToString()),
-                        Csv(email.AccountEmail));
+                        Csv(email.AccountEmail),
+                        Csv(email.OriginalSha256 != null ? OriginalFileName(email.Id) : string.Empty),
+                        Csv(email.OriginalSha256 ?? string.Empty));
                     await writer.WriteAsync(line);
                     await writer.WriteAsync('\n');
                     job.ProcessedEmails++;
@@ -591,6 +596,45 @@ namespace MailArchiver.Services
 
                 // Persist progress so the polling UI sees movement even for huge ranges
                 await context.SaveChangesAsync(cancellationToken);
+            }
+        }
+
+        private static string OriginalFileName(int emailId) => $"{OriginalsFolder}/{emailId}.eml";
+
+        /// <summary>
+        /// Adds the byte-exact original of every exported email that has one, so the auditor
+        /// gets the unchanged message and can check it against OriginalSha256 in emails.csv.
+        /// </summary>
+        private async Task WriteOriginalsAsync(AuditExportJob job, MailArchiverDbContext context, ZipArchive archive, CancellationToken cancellationToken)
+        {
+            var lastId = 0;
+            while (true)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                var ids = await BuildEmailQuery(context, job)
+                    .Where(e => e.Id > lastId)
+                    .Select(e => e.Id)
+                    .Take(BatchSize)
+                    .ToListAsync(cancellationToken);
+                if (ids.Count == 0)
+                {
+                    break;
+                }
+
+                foreach (var id in ids)
+                {
+                    // One at a time: originals carry their attachments and can be large
+                    var original = await OriginalMessage.LoadAsync(context, id, cancellationToken);
+                    if (original != null)
+                    {
+                        var entry = archive.CreateEntry(OriginalFileName(id), CompressionLevel.Optimal);
+                        await using var entryStream = entry.Open();
+                        await entryStream.WriteAsync(original, cancellationToken);
+                    }
+                }
+
+                lastId = ids[^1];
             }
         }
 
@@ -756,7 +800,9 @@ namespace MailArchiver.Services
             writer.WriteStartElement("Media");
             writer.WriteElementString("Name", "E-Mail-Archiv");
 
-            WriteTable(writer, EmailCsvName, "E-Mail-Metadaten", "Metadaten archivierter E-Mails", EmailCsvColumns);
+            WriteTable(writer, EmailCsvName, "E-Mail-Metadaten",
+                "Metadaten archivierter E-Mails. OriginalFile nennt die unveränderte Original-E-Mail (.eml) im Ordner originals, OriginalSha256 ihre Prüfsumme: SHA-256 (hex) über die Datei ergibt OriginalSha256. Leer bei E-Mails, zu denen kein Original gespeichert ist.",
+                EmailCsvColumns);
             if (job.IncludeAttachments)
             {
                 WriteTable(writer, AttachmentCsvName, "Anhang-Metadaten", "Metadaten archivierter E-Mail-Anhänge", AttachmentCsvColumns);
@@ -784,7 +830,9 @@ namespace MailArchiver.Services
             ("FolderName", "AlphaNumeric"),
             ("HasAttachments", "AlphaNumeric"),
             ("AttachmentCount", "Numeric"),
-            ("AccountEmail", "AlphaNumeric")
+            ("AccountEmail", "AlphaNumeric"),
+            ("OriginalFile", "AlphaNumeric"),
+            ("OriginalSha256", "AlphaNumeric")
         };
 
         private static readonly (string Name, string Type)[] AttachmentCsvColumns =

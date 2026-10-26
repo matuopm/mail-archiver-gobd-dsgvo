@@ -133,6 +133,18 @@ public class AuditExportServiceIntegrationTests
                 });
             await seedContext.SaveChangesAsync();
 
+            // Stored original for a1. Inserted as already expired (trigger bypassed) so the
+            // cleanup below may delete it again; the export does not look at RetainUntil.
+            var withOriginal = seedContext.ArchivedEmails.Single(e => e.MailAccountId == account.Id && e.MessageId == "<a1@test.local>");
+            await seedContext.Database.ExecuteSqlRawAsync(
+                "ALTER TABLE archive_worm.\"ArchivedEmailSources\" DISABLE TRIGGER verify_source_insert");
+            await seedContext.Database.ExecuteSqlRawAsync(
+                "INSERT INTO archive_worm.\"ArchivedEmailSources\" (\"ArchivedEmailId\", \"RawMime\", \"Size\", \"Sha256\", \"Source\", \"RetainUntil\") " +
+                "VALUES ({0}, {1}, {2}, {3}, 'imap', now() - interval '1 day')",
+                withOriginal.Id, OriginalMime, (long)OriginalMime.Length, Sha256Hex(OriginalMime));
+            await seedContext.Database.ExecuteSqlRawAsync(
+                "ALTER TABLE archive_worm.\"ArchivedEmailSources\" ENABLE TRIGGER verify_source_insert");
+
             var opened = seedContext.ArchivedEmails.Single(e => e.MailAccountId == account.Id && e.MessageId == "<a2@test.local>");
             seedContext.AccessLogs.AddRange(
                 new AccessLog
@@ -201,6 +213,22 @@ public class AuditExportServiceIntegrationTests
             Assert.Contains("Umlaute: Grüße aus München", csv);
             Assert.DoesNotContain("Außerhalb des Zeitraums", csv);
 
+            // Originals: a1 has one, delivered byte for byte and referenced with its SHA-256; a2 has none
+            var a1Line = ParseCsvLine(Assert.Single(lines, l => l.Contains("<a1@test.local>")));
+            var a2Line = ParseCsvLine(Assert.Single(lines, l => l.Contains("<a2@test.local>")));
+            Assert.Equal(16, a1Line.Count);
+            Assert.Equal($"originals/{a1Line[0]}.eml", a1Line[14]);
+            Assert.Equal(Sha256Hex(OriginalMime), a1Line[15]);
+            Assert.Equal(string.Empty, a2Line[14]);
+            Assert.Equal(string.Empty, a2Line[15]);
+            using (var originalStream = archive.GetEntry(a1Line[14])!.Open())
+            using (var copy = new MemoryStream())
+            {
+                await originalStream.CopyToAsync(copy);
+                Assert.Equal(OriginalMime, copy.ToArray());
+            }
+            Assert.Single(entryNames, n => n.StartsWith("originals/"));
+
             // Access log table: only this mailbox's entries, German texts, with the hash chain
             using (var logReader = new StreamReader(archive.GetEntry("accesslog.csv")!.Open(), new UTF8Encoding(false)))
             {
@@ -267,6 +295,13 @@ public class AuditExportServiceIntegrationTests
             }
         }
     }
+
+    // Latin-1 umlaut and CRLF line ends: must survive the export unchanged
+    private static readonly byte[] OriginalMime = Encoding.Latin1.GetBytes(
+        "Subject: Original\r\nContent-Type: text/plain; charset=iso-8859-1\r\nContent-Transfer-Encoding: 8bit\r\n\r\nGr\u00fc\u00dfe\r\n");
+
+    private static string Sha256Hex(byte[] bytes) =>
+        Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(bytes)).ToLowerInvariant();
 
     /// <summary>Splits one CSV line of the export (separator ';', fields quoted with '"').</summary>
     private static List<string> ParseCsvLine(string line)
