@@ -64,14 +64,24 @@ namespace MailArchiver.Services.Shared
 
                 // Two messages with their own, different Message-IDs are two emails, even when
                 // sender, recipients and subject match within the window (an invoice run, say).
-                // GoBD requires every one of them, so the field match only applies to messages
-                // without a Message-ID of their own.
-                var matchFields = string.IsNullOrEmpty(message.MessageId);
+                // GoBD requires every one of them. Without a Message-ID (scan-to-mail devices,
+                // for example) the generated ID and the field match would merge two scans with
+                // the same subject in the same second, so there only an identical original
+                // (same SHA-256) counts as the same email. The field match remains for the
+                // case without a Message-ID and without an original.
+                var hasOwnMessageId = !string.IsNullOrEmpty(message.MessageId);
+                var originalHash = originalMime is { Length: > 0 }
+                    ? Convert.ToHexString(SHA256.HashData(originalMime)).ToLowerInvariant()
+                    : null;
+                var matchHash = !hasOwnMessageId && originalHash != null;
+                var matchId = !matchHash;
+                var matchFields = !hasOwnMessageId && originalHash == null;
 
                 var existing = await context.ArchivedEmails
                     .Where(e => e.MailAccountId == account.Id)
                     .Where(e =>
-                        messageIdCandidates.Contains(e.MessageId) ||
+                        (matchId && messageIdCandidates.Contains(e.MessageId)) ||
+                        (matchHash && e.ContentHash == originalHash) ||
                         (matchFields && e.From == checkFrom && e.To == checkTo && e.Subject == checkSubject &&
                          Math.Abs((e.SentDate - checkSentDate).TotalSeconds) < toleranceSeconds))
                     .FirstOrDefaultAsync();
@@ -230,7 +240,7 @@ namespace MailArchiver.Services.Shared
 
                 if (originalMime is { Length: > 0 })
                 {
-                    var sha256 = Convert.ToHexString(SHA256.HashData(originalMime)).ToLowerInvariant();
+                    var sha256 = originalHash!;
                     archivedEmail.ContentHash = sha256;
                     archivedEmail.HashCreatedAt = DateTime.UtcNow;
                     context.ArchivedEmailSources.Add(new ArchivedEmailSource

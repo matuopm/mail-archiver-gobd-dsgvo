@@ -190,4 +190,53 @@ public class ImportOriginalCaptureTests
 
         await scope.RollbackAsync();
     }
+
+    private static (MimeMessage Message, byte[] Raw) Scan(string body)
+    {
+        // Scan-to-mail device: no Message-ID, same subject, same second
+        var raw = Encoding.ASCII.GetBytes(
+            "From: scanner@x.com\r\nTo: buero@x.com\r\nSubject: Scan\r\nDate: Mon, 01 Jan 2024 10:00:00 +0000\r\n" +
+            $"Content-Type: text/plain\r\n\r\n{body}\r\n");
+        return (MimeMessage.Load(new MemoryStream(raw)), raw);
+    }
+
+    [Fact]
+    public async Task Import_WithoutMessageId_DifferentOriginals_KeepsBoth()
+    {
+        await using var scope = await _fixture.CreateTransactionalContextAsync();
+        var ctx = scope.Context;
+        var account = await SeedAccountAsync(ctx);
+        var importer = CreateImporter(ctx);
+        var (first, firstRaw) = Scan("Seite 1");
+        var (second, secondRaw) = Scan("Seite 2");
+
+        var a = await importer.ImportEmailToDatabase(first, account, "job", "INBOX", firstRaw, ArchivedEmailSourceKinds.EmlImport);
+        var b = await importer.ImportEmailToDatabase(second, account, "job", "INBOX", secondRaw, ArchivedEmailSourceKinds.EmlImport);
+
+        Assert.True(a.Success, a.Error);
+        Assert.True(b.Success, b.Error);
+        Assert.False(b.AlreadyExists);
+        Assert.Equal(2, await ctx.ArchivedEmails.CountAsync(e => e.MailAccountId == account.Id));
+
+        await scope.RollbackAsync();
+    }
+
+    [Fact]
+    public async Task Import_WithoutMessageId_IdenticalOriginal_IsSkippedAsDuplicate()
+    {
+        await using var scope = await _fixture.CreateTransactionalContextAsync();
+        var ctx = scope.Context;
+        var account = await SeedAccountAsync(ctx);
+        var importer = CreateImporter(ctx);
+        var (first, raw) = Scan("Seite 1");
+        var (again, rawAgain) = Scan("Seite 1");
+
+        await importer.ImportEmailToDatabase(first, account, "job", "INBOX", raw, ArchivedEmailSourceKinds.EmlImport);
+        var result = await importer.ImportEmailToDatabase(again, account, "job", "INBOX", rawAgain, ArchivedEmailSourceKinds.EmlImport);
+
+        Assert.True(result.AlreadyExists);
+        Assert.Equal(1, await ctx.ArchivedEmails.CountAsync(e => e.MailAccountId == account.Id));
+
+        await scope.RollbackAsync();
+    }
 }
