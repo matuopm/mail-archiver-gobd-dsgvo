@@ -126,4 +126,68 @@ public class ImportOriginalCaptureTests
 
         await scope.RollbackAsync();
     }
+
+    private static MimeMessage Invoice(string? messageId, string date, string body)
+    {
+        var header = messageId == null ? string.Empty : $"Message-Id: <{messageId}>\r\n";
+        return MimeMessage.Load(new MemoryStream(Encoding.ASCII.GetBytes(
+            $"From: shop@x.com\r\nTo: kunde@x.com\r\nSubject: Ihre Rechnung\r\nDate: {date}\r\n{header}" +
+            $"Content-Type: text/plain\r\n\r\n{body}\r\n")));
+    }
+
+    [Fact]
+    public async Task Import_SameFieldsButOwnMessageIds_KeepsBothEmails()
+    {
+        // An invoice run: sender, recipient and subject match one second apart; only the
+        // Message-IDs and contents differ. Both are separate documents and must be archived.
+        await using var scope = await _fixture.CreateTransactionalContextAsync();
+        var ctx = scope.Context;
+        var account = await SeedAccountAsync(ctx);
+        var importer = CreateImporter(ctx);
+
+        var first = await importer.ImportEmailToDatabase(Invoice($"{Guid.NewGuid():N}@x.com", "Mon, 01 Jan 2024 10:00:00 +0000", "Rechnung 1001"), account, "job", "INBOX");
+        var second = await importer.ImportEmailToDatabase(Invoice($"{Guid.NewGuid():N}@x.com", "Mon, 01 Jan 2024 10:00:01 +0000", "Rechnung 1002"), account, "job", "INBOX");
+
+        Assert.True(first.Success, first.Error);
+        Assert.True(second.Success, second.Error);
+        Assert.False(second.AlreadyExists);
+        Assert.Equal(2, await ctx.ArchivedEmails.CountAsync(e => e.MailAccountId == account.Id));
+
+        await scope.RollbackAsync();
+    }
+
+    [Fact]
+    public async Task Import_SameMessageId_IsSkippedAsDuplicate()
+    {
+        await using var scope = await _fixture.CreateTransactionalContextAsync();
+        var ctx = scope.Context;
+        var account = await SeedAccountAsync(ctx);
+        var importer = CreateImporter(ctx);
+        var id = $"{Guid.NewGuid():N}@x.com";
+
+        await importer.ImportEmailToDatabase(Invoice(id, "Mon, 01 Jan 2024 10:00:00 +0000", "Rechnung 1001"), account, "job", "INBOX");
+        var again = await importer.ImportEmailToDatabase(Invoice(id, "Mon, 01 Jan 2024 10:00:00 +0000", "Rechnung 1001"), account, "job", "INBOX");
+
+        Assert.True(again.AlreadyExists);
+        Assert.Equal(1, await ctx.ArchivedEmails.CountAsync(e => e.MailAccountId == account.Id));
+
+        await scope.RollbackAsync();
+    }
+
+    [Fact]
+    public async Task Import_WithoutMessageId_StillMatchesByFields()
+    {
+        await using var scope = await _fixture.CreateTransactionalContextAsync();
+        var ctx = scope.Context;
+        var account = await SeedAccountAsync(ctx);
+        var importer = CreateImporter(ctx);
+
+        await importer.ImportEmailToDatabase(Invoice(null, "Mon, 01 Jan 2024 10:00:00 +0000", "Rechnung"), account, "job", "INBOX");
+        var nearCopy = await importer.ImportEmailToDatabase(Invoice(null, "Mon, 01 Jan 2024 10:00:01 +0000", "Rechnung"), account, "job", "INBOX");
+
+        Assert.True(nearCopy.AlreadyExists);
+        Assert.Equal(1, await ctx.ArchivedEmails.CountAsync(e => e.MailAccountId == account.Id));
+
+        await scope.RollbackAsync();
+    }
 }

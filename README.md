@@ -17,6 +17,7 @@ Der Fork ist bewusst ein reiner GoBD-Modus ohne Schalter. Wer diese Einschränku
 - Jede E-Mail wird beim Abruf zusätzlich byte-genau als Original (`.eml`) mit SHA-256 gespeichert, in einem eigenen Datenbankschema `archive_worm`.
 - Die Datenbank selbst verhindert jede Änderung: Ändern und Leeren werden abgelehnt, Löschen erst nach Ablauf der Frist erlaubt, die Prüfsumme wird beim Speichern nachgerechnet.
 - Das gilt für den IMAP-Abruf und für den Import von EML- und MBOX-Dateien (Weboberfläche und Kommandozeile).
+- Beim Import gilt eine E-Mail nur dann als doppelt, wenn ihre Message-ID im Postfach schon vorkommt. Gleicher Absender, Empfänger und Betreff reichen nicht: Zwei Rechnungen mit gleichem Betreff kurz hintereinander werden beide archiviert. Nur E-Mails ohne Message-ID werden über diese Felder erkannt.
 - Alle Exporte geben das Original byte-genau heraus, nicht eine neu zusammengesetzte Mail: einzelne E-Mail, Postfach, Auswahl (EML und MBOX) und der Export für die Betriebsprüfung (Z3). Im Z3-Export liegen die Originale im Ordner `originals`, `emails.csv` nennt zu jeder Datei die Prüfsumme.
 - Optional lässt sich die Datenbank härten: Die Anwendung arbeitet dann mit einer eigenen Rolle, die im geschützten Speicher nur lesen und hinzufügen darf.
 - Details: [doc/WormStorage.md](doc/WormStorage.md)

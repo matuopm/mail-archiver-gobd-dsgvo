@@ -62,11 +62,17 @@ namespace MailArchiver.Services.Shared
 
                 var messageIdCandidates = MailContentHelper.MessageIdMatchCandidates(messageId).ToList();
 
+                // Two messages with their own, different Message-IDs are two emails, even when
+                // sender, recipients and subject match within the window (an invoice run, say).
+                // GoBD requires every one of them, so the field match only applies to messages
+                // without a Message-ID of their own.
+                var matchFields = string.IsNullOrEmpty(message.MessageId);
+
                 var existing = await context.ArchivedEmails
                     .Where(e => e.MailAccountId == account.Id)
                     .Where(e =>
                         messageIdCandidates.Contains(e.MessageId) ||
-                        (e.From == checkFrom && e.To == checkTo && e.Subject == checkSubject &&
+                        (matchFields && e.From == checkFrom && e.To == checkTo && e.Subject == checkSubject &&
                          Math.Abs((e.SentDate - checkSentDate).TotalSeconds) < toleranceSeconds))
                     .FirstOrDefaultAsync();
 

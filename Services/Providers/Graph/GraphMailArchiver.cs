@@ -161,12 +161,17 @@ namespace MailArchiver.Services.Providers.Graph
                 // existing archives are still recognized as duplicates.
                 var messageIdCandidates = MailContentHelper.MessageIdMatchCandidates(messageId).ToList();
 
+                // Different Message-IDs mean different emails, whatever else matches; GoBD
+                // requires every one of them. The field match only covers messages without one.
+                var matchFields = string.IsNullOrEmpty(message.InternetMessageId);
+
                 var existingInfo = await _context.ArchivedEmails
                     .AsNoTracking()
                     .Where(e => e.MailAccountId == accountId)
                     .Where(e =>
                         messageIdCandidates.Contains(e.MessageId) ||
-                        (e.From == checkFrom &&
+                        (matchFields &&
+                         e.From == checkFrom &&
                          e.To == checkTo &&
                          e.Subject == checkSubject &&
                          Math.Abs((e.SentDate - checkDate).TotalSeconds) < toleranceSeconds)
